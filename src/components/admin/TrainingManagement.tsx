@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, CreditCard as Edit2, Trash2, Search, Calendar, LayoutGrid as Layout, ExternalLink } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, Calendar, Layout, ExternalLink } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { format } from 'date-fns';
 import { ModuleBuilder } from './ModuleBuilder';
