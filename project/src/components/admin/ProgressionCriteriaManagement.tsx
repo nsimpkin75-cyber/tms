@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Save, X, Target } from 'lucide-react';
+import { Plus, CreditCard as Edit2, Trash2, Save, X, Target } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 interface CriteriaItem {

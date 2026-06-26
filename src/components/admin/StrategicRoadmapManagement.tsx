@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Search, Target, Calendar, Users } from 'lucide-react';
+import { Plus, CreditCard as Edit2, Trash2, Search, Target, Calendar, Users } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { format } from 'date-fns';
 

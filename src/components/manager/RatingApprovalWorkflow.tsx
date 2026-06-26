@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { CheckCircle, XCircle, Edit3, AlertCircle, FileText } from 'lucide-react';
+import { CheckCircle, XCircle, CreditCard as Edit3, AlertCircle, FileText } from 'lucide-react';
 
 interface ApprovalRequest {
   id: string;
