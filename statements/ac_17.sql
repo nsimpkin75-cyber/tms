@@ -1,0 +1,636 @@
+CREATE TABLE IF NOT EXISTS review_cycles (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  manager_id uuid NOT NULL REFERENCES profiles(id),
+  cycle_name text NOT NULL,
+  strategy_id uuid REFERENCES strategies(id),
+  focus_area_id uuid REFERENCES strategy_focus_areas(id),
+  start_date date NOT NULL,
+  end_date date NOT NULL,
+  weekly_checkins_enabled boolean DEFAULT false,
+  status text DEFAULT 'active' CHECK (status IN ('draft', 'active', 'completed', 'archived')),
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS review_cycle_members (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  cycle_id uuid NOT NULL REFERENCES review_cycles(id) ON DELETE CASCADE,
+  employee_id uuid NOT NULL REFERENCES profiles(id),
+  status text DEFAULT 'active' CHECK (status IN ('active', 'removed')),
+  added_at timestamptz DEFAULT now(),
+  UNIQUE(cycle_id, employee_id)
+);
+
+CREATE TABLE IF NOT EXISTS review_cycle_kpis (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  cycle_id uuid NOT NULL REFERENCES review_cycles(id) ON DELETE CASCADE,
+  kpi_name text NOT NULL,
+  kpi_target text,
+  kpi_measurement_unit text,
+  weighting numeric,
+  from_strategy boolean DEFAULT false,
+  can_remove boolean DEFAULT true,
+  sort_order integer DEFAULT 0,
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS review_cycle_actions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  cycle_id uuid NOT NULL REFERENCES review_cycles(id) ON DELETE CASCADE,
+  action_title text NOT NULL,
+  action_description text,
+  default_target_date date,
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS review_weekly_kpi_ratings (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  cycle_id uuid NOT NULL REFERENCES review_cycles(id),
+  employee_id uuid NOT NULL REFERENCES profiles(id),
+  week_starting date NOT NULL,
+  kpi_id uuid NOT NULL REFERENCES review_cycle_kpis(id),
+  rating integer NOT NULL CHECK (rating BETWEEN 0 AND 4),
+  comment text,
+  manager_id uuid NOT NULL REFERENCES profiles(id),
+  rolling_average numeric,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+  UNIQUE(cycle_id, employee_id, week_starting, kpi_id)
+);
+
+CREATE TABLE IF NOT EXISTS review_employee_actions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  cycle_id uuid NOT NULL REFERENCES review_cycles(id),
+  employee_id uuid NOT NULL REFERENCES profiles(id),
+  action_title text NOT NULL,
+  action_owner uuid NOT NULL REFERENCES profiles(id),
+  target_date date,
+  status text DEFAULT 'in_progress' CHECK (status IN ('in_progress', 'completed', 'closed', 'cancelled')),
+  is_overdue boolean DEFAULT false,
+  is_carried_forward boolean DEFAULT false,
+  carried_from_review_id uuid,
+  completion_notes text,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS review_weekly_summaries (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  cycle_id uuid NOT NULL REFERENCES review_cycles(id),
+  employee_id uuid NOT NULL REFERENCES profiles(id),
+  week_starting date NOT NULL,
+  ai_summary text,
+  manager_edited_summary text,
+  manager_id uuid NOT NULL REFERENCES profiles(id),
+  submitted_at timestamptz,
+  is_locked boolean DEFAULT false,
+  created_at timestamptz DEFAULT now(),
+  UNIQUE(cycle_id, employee_id, week_starting)
+);
+
+CREATE TABLE IF NOT EXISTS review_monthly_competency_scores (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  cycle_id uuid NOT NULL REFERENCES review_cycles(id),
+  employee_id uuid NOT NULL REFERENCES profiles(id),
+  review_month date NOT NULL,
+  competency_id uuid NOT NULL REFERENCES competencies(id),
+  rating integer NOT NULL CHECK (rating BETWEEN 0 AND 4),
+  manager_comment text NOT NULL,
+  evidence text,
+  requires_moderation boolean DEFAULT false,
+  moderation_status text DEFAULT 'not_required' CHECK (moderation_status IN ('not_required', 'pending', 'approved', 'modified')),
+  ai_coaching_suggestion text,
+  ai_learning_suggestion text,
+  manager_id uuid NOT NULL REFERENCES profiles(id),
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+  UNIQUE(cycle_id, employee_id, review_month, competency_id)
+);
+
+CREATE TABLE IF NOT EXISTS review_monthly_averages (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  cycle_id uuid NOT NULL REFERENCES review_cycles(id),
+  employee_id uuid NOT NULL REFERENCES profiles(id),
+  review_month date NOT NULL,
+  kpi_average numeric,
+  competency_average numeric,
+  nine_box_position text,
+  weekly_summary_ids uuid[],
+  ai_monthly_summary text,
+  manager_edited_summary text,
+  manager_id uuid NOT NULL REFERENCES profiles(id),
+  submitted_at timestamptz,
+  is_locked boolean DEFAULT false,
+  created_at timestamptz DEFAULT now(),
+  UNIQUE(cycle_id, employee_id, review_month)
+);
+
+CREATE TABLE IF NOT EXISTS review_half_year_assessments (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  cycle_id uuid NOT NULL REFERENCES review_cycles(id),
+  employee_id uuid NOT NULL REFERENCES profiles(id),
+  assessment_period_start date NOT NULL,
+  assessment_period_end date NOT NULL,
+  
+  employee_submitted boolean DEFAULT false,
+  employee_kpi_ratings jsonb,
+  employee_competency_ratings jsonb,
+  employee_what_do_well text,
+  employee_where_need_support text,
+  employee_submitted_at timestamptz,
+  
+  manager_submitted boolean DEFAULT false,
+  manager_kpi_ratings jsonb,
+  manager_competency_ratings jsonb,
+  manager_what_do_well text,
+  manager_where_need_support text,
+  manager_id uuid NOT NULL REFERENCES profiles(id),
+  manager_submitted_at timestamptz,
+  
+  ai_gap_analysis text,
+  ai_development_plan text,
+  ai_learning_path jsonb,
+  
+  six_month_kpi_average numeric,
+  six_month_competency_average numeric,
+  trend_analysis text,
+  
+  is_locked boolean DEFAULT false,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+  UNIQUE(cycle_id, employee_id, assessment_period_start)
+);
+
+CREATE TABLE IF NOT EXISTS review_schedules (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  cycle_id uuid NOT NULL REFERENCES review_cycles(id),
+  employee_id uuid NOT NULL REFERENCES profiles(id),
+  manager_id uuid NOT NULL REFERENCES profiles(id),
+  schedule_type text NOT NULL CHECK (schedule_type IN ('weekly', 'monthly', 'half_year')),
+  scheduled_date timestamptz NOT NULL,
+  recurrence text CHECK (recurrence IN ('none', 'weekly', 'monthly', 'custom')),
+  recurrence_end_date date,
+  calendar_invite_sent boolean DEFAULT false,
+  calendar_link text,
+  status text DEFAULT 'scheduled' CHECK (status IN ('scheduled', 'completed', 'cancelled', 'rescheduled')),
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_review_cycles_manager ON review_cycles(manager_id);
+CREATE INDEX IF NOT EXISTS idx_review_cycles_strategy ON review_cycles(strategy_id);
+CREATE INDEX IF NOT EXISTS idx_review_cycles_status ON review_cycles(status);
+CREATE INDEX IF NOT EXISTS idx_review_cycle_members_cycle ON review_cycle_members(cycle_id);
+CREATE INDEX IF NOT EXISTS idx_review_cycle_members_employee ON review_cycle_members(employee_id);
+CREATE INDEX IF NOT EXISTS idx_review_cycle_kpis_cycle ON review_cycle_kpis(cycle_id);
+CREATE INDEX IF NOT EXISTS idx_review_cycle_actions_cycle ON review_cycle_actions(cycle_id);
+CREATE INDEX IF NOT EXISTS idx_review_weekly_kpi_ratings_employee ON review_weekly_kpi_ratings(employee_id, week_starting);
+CREATE INDEX IF NOT EXISTS idx_review_employee_actions_employee ON review_employee_actions(employee_id, status);
+CREATE INDEX IF NOT EXISTS idx_review_employee_actions_overdue ON review_employee_actions(is_overdue) WHERE is_overdue = true;
+CREATE INDEX IF NOT EXISTS idx_review_weekly_summaries_employee ON review_weekly_summaries(employee_id, week_starting);
+CREATE INDEX IF NOT EXISTS idx_review_monthly_competency_employee ON review_monthly_competency_scores(employee_id, review_month);
+CREATE INDEX IF NOT EXISTS idx_review_monthly_competency_moderation ON review_monthly_competency_scores(moderation_status) WHERE requires_moderation = true;
+CREATE INDEX IF NOT EXISTS idx_review_monthly_averages_employee ON review_monthly_averages(employee_id, review_month);
+CREATE INDEX IF NOT EXISTS idx_review_half_year_employee ON review_half_year_assessments(employee_id);
+CREATE INDEX IF NOT EXISTS idx_review_schedules_employee ON review_schedules(employee_id, scheduled_date);
+
+ALTER TABLE review_cycles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE review_cycle_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE review_cycle_kpis ENABLE ROW LEVEL SECURITY;
+ALTER TABLE review_cycle_actions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE review_weekly_kpi_ratings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE review_employee_actions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE review_weekly_summaries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE review_monthly_competency_scores ENABLE ROW LEVEL SECURITY;
+ALTER TABLE review_monthly_averages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE review_half_year_assessments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE review_schedules ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "Managers can create review cycles"
+  ON review_cycles FOR INSERT
+  TO authenticated
+  WITH CHECK (manager_id = auth.uid());
+
+CREATE POLICY "Users can view their cycles"
+  ON review_cycles FOR SELECT
+  TO authenticated
+  USING (
+    manager_id = auth.uid()
+    OR EXISTS (
+      SELECT 1 FROM review_cycle_members
+      WHERE cycle_id = id AND employee_id = auth.uid()
+    )
+    OR EXISTS (
+      SELECT 1 FROM profiles
+      WHERE id = auth.uid() AND role IN ('leadership', 'admin')
+    )
+  );
+
+CREATE POLICY "Managers can update their cycles"
+  ON review_cycles FOR UPDATE
+  TO authenticated
+  USING (manager_id = auth.uid());
+
+CREATE POLICY "Users can view cycle members"
+  ON review_cycle_members FOR SELECT
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM review_cycles
+      WHERE id = cycle_id AND manager_id = auth.uid()
+    )
+    OR employee_id = auth.uid()
+    OR EXISTS (
+      SELECT 1 FROM profiles
+      WHERE id = auth.uid() AND role IN ('leadership', 'admin')
+    )
+  );
+
+CREATE POLICY "Managers can manage cycle members"
+  ON review_cycle_members FOR ALL
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM review_cycles
+      WHERE id = cycle_id AND manager_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Users can view cycle KPIs"
+  ON review_cycle_kpis FOR SELECT
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM review_cycles
+      WHERE id = cycle_id AND manager_id = auth.uid()
+    )
+    OR EXISTS (
+      SELECT 1 FROM review_cycle_members
+      WHERE cycle_id = review_cycle_kpis.cycle_id AND employee_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Managers can manage cycle KPIs"
+  ON review_cycle_kpis FOR ALL
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM review_cycles
+      WHERE id = cycle_id AND manager_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Users can view cycle actions"
+  ON review_cycle_actions FOR SELECT
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM review_cycles
+      WHERE id = cycle_id AND manager_id = auth.uid()
+    )
+    OR EXISTS (
+      SELECT 1 FROM review_cycle_members
+      WHERE cycle_id = review_cycle_actions.cycle_id AND employee_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Managers can manage cycle actions"
+  ON review_cycle_actions FOR ALL
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM review_cycles
+      WHERE id = cycle_id AND manager_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Users can view their KPI ratings"
+  ON review_weekly_kpi_ratings FOR SELECT
+  TO authenticated
+  USING (
+    employee_id = auth.uid()
+    OR manager_id = auth.uid()
+    OR EXISTS (
+      SELECT 1 FROM profiles
+      WHERE id = auth.uid() AND role IN ('leadership', 'admin')
+    )
+  );
+
+CREATE POLICY "Managers can create KPI ratings"
+  ON review_weekly_kpi_ratings FOR INSERT
+  TO authenticated
+  WITH CHECK (manager_id = auth.uid());
+
+CREATE POLICY "Managers can update KPI ratings"
+  ON review_weekly_kpi_ratings FOR UPDATE
+  TO authenticated
+  USING (manager_id = auth.uid());
+
+CREATE POLICY "Users can view their actions"
+  ON review_employee_actions FOR SELECT
+  TO authenticated
+  USING (
+    employee_id = auth.uid()
+    OR EXISTS (
+      SELECT 1 FROM review_cycles
+      WHERE id = cycle_id AND manager_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Users can manage their actions"
+  ON review_employee_actions FOR ALL
+  TO authenticated
+  USING (
+    employee_id = auth.uid()
+    OR EXISTS (
+      SELECT 1 FROM review_cycles
+      WHERE id = cycle_id AND manager_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Users can view their weekly summaries"
+  ON review_weekly_summaries FOR SELECT
+  TO authenticated
+  USING (
+    employee_id = auth.uid()
+    OR manager_id = auth.uid()
+    OR EXISTS (
+      SELECT 1 FROM profiles
+      WHERE id = auth.uid() AND role IN ('leadership', 'admin')
+    )
+  );
+
+CREATE POLICY "Managers can create weekly summaries"
+  ON review_weekly_summaries FOR INSERT
+  TO authenticated
+  WITH CHECK (manager_id = auth.uid());
+
+CREATE POLICY "Managers and HR can update weekly summaries"
+  ON review_weekly_summaries FOR UPDATE
+  TO authenticated
+  USING (
+    manager_id = auth.uid()
+    OR EXISTS (
+      SELECT 1 FROM profiles
+      WHERE id = auth.uid() AND role = 'admin'
+    )
+  );
+
+CREATE POLICY "Users can view their competency scores"
+  ON review_monthly_competency_scores FOR SELECT
+  TO authenticated
+  USING (
+    employee_id = auth.uid()
+    OR manager_id = auth.uid()
+    OR EXISTS (
+      SELECT 1 FROM profiles
+      WHERE id = auth.uid() AND role IN ('leadership', 'admin')
+    )
+  );
+
+CREATE POLICY "Managers can manage competency scores"
+  ON review_monthly_competency_scores FOR ALL
+  TO authenticated
+  USING (manager_id = auth.uid());
+
+CREATE POLICY "Users can view their monthly averages"
+  ON review_monthly_averages FOR SELECT
+  TO authenticated
+  USING (
+    employee_id = auth.uid()
+    OR manager_id = auth.uid()
+    OR EXISTS (
+      SELECT 1 FROM profiles
+      WHERE id = auth.uid() AND role IN ('leadership', 'admin')
+    )
+  );
+
+CREATE POLICY "Managers and HR can manage monthly averages"
+  ON review_monthly_averages FOR ALL
+  TO authenticated
+  USING (
+    manager_id = auth.uid()
+    OR EXISTS (
+      SELECT 1 FROM profiles
+      WHERE id = auth.uid() AND role = 'admin'
+    )
+  );
+
+CREATE POLICY "Users can view their half year assessments"
+  ON review_half_year_assessments FOR SELECT
+  TO authenticated
+  USING (
+    employee_id = auth.uid()
+    OR manager_id = auth.uid()
+    OR EXISTS (
+      SELECT 1 FROM profiles
+      WHERE id = auth.uid() AND role IN ('leadership', 'admin')
+    )
+  );
+
+CREATE POLICY "System can create half year assessments"
+  ON review_half_year_assessments FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    employee_id = auth.uid()
+    OR manager_id = auth.uid()
+  );
+
+CREATE POLICY "Users and HR can update half year assessments"
+  ON review_half_year_assessments FOR UPDATE
+  TO authenticated
+  USING (
+    employee_id = auth.uid()
+    OR manager_id = auth.uid()
+    OR EXISTS (
+      SELECT 1 FROM profiles
+      WHERE id = auth.uid() AND role = 'admin'
+    )
+  );
+
+CREATE POLICY "Users can view their schedules"
+  ON review_schedules FOR SELECT
+  TO authenticated
+  USING (
+    employee_id = auth.uid()
+    OR manager_id = auth.uid()
+  );
+
+CREATE POLICY "Managers can manage schedules"
+  ON review_schedules FOR ALL
+  TO authenticated
+  USING (manager_id = auth.uid());
+
+CREATE OR REPLACE FUNCTION calculate_kpi_rolling_average(
+  p_employee_id uuid,
+  p_kpi_id uuid,
+  p_week_starting date
+)
+RETURNS numeric
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_average numeric;
+BEGIN
+  SELECT AVG(rating)::numeric(10,2)
+  INTO v_average
+  FROM review_weekly_kpi_ratings
+  WHERE employee_id = p_employee_id
+  AND kpi_id = p_kpi_id
+  AND week_starting <= p_week_starting
+  AND week_starting >= p_week_starting - INTERVAL '12 weeks';
+  
+  RETURN COALESCE(v_average, 0);
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION calculate_kpi_rolling_average(uuid, uuid, date) TO authenticated;
+
+CREATE OR REPLACE FUNCTION carry_forward_outstanding_actions(
+  p_from_cycle_id uuid,
+  p_to_cycle_id uuid,
+  p_employee_id uuid
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  INSERT INTO review_employee_actions (
+    cycle_id,
+    employee_id,
+    action_title,
+    action_owner,
+    target_date,
+    status,
+    is_carried_forward,
+    carried_from_review_id
+  )
+  SELECT
+    p_to_cycle_id,
+    employee_id,
+    action_title,
+    action_owner,
+    target_date,
+    'in_progress',
+    true,
+    id
+  FROM review_employee_actions
+  WHERE cycle_id = p_from_cycle_id
+  AND employee_id = p_employee_id
+  AND status IN ('in_progress', 'in_progress')
+  AND NOT EXISTS (
+    SELECT 1 FROM review_employee_actions
+    WHERE cycle_id = p_to_cycle_id
+    AND employee_id = p_employee_id
+    AND is_carried_forward = true
+    AND carried_from_review_id = review_employee_actions.id
+  );
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION carry_forward_outstanding_actions(uuid, uuid, uuid) TO authenticated;
+
+CREATE OR REPLACE FUNCTION calculate_nine_box_position(
+  p_kpi_average numeric,
+  p_competency_average numeric
+)
+RETURNS text
+LANGUAGE plpgsql
+IMMUTABLE
+AS $$
+DECLARE
+  v_performance text;
+  v_potential text;
+BEGIN
+  IF p_kpi_average >= 3.5 THEN
+    v_performance := 'High';
+  ELSIF p_kpi_average >= 2.5 THEN
+    v_performance := 'Medium';
+  ELSE
+    v_performance := 'Low';
+  END IF;
+  
+  IF p_competency_average >= 3.5 THEN
+    v_potential := 'High';
+  ELSIF p_competency_average >= 2.5 THEN
+    v_potential := 'Medium';
+  ELSE
+    v_potential := 'Low';
+  END IF;
+  
+  RETURN v_potential || ' Potential / ' || v_performance || ' Performance';
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION calculate_nine_box_position(numeric, numeric) TO authenticated;
+
+CREATE OR REPLACE FUNCTION update_kpi_rolling_average()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  NEW.rolling_average := calculate_kpi_rolling_average(
+    NEW.employee_id,
+    NEW.kpi_id,
+    NEW.week_starting
+  );
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS on_weekly_kpi_rating_change ON review_weekly_kpi_ratings;
+CREATE TRIGGER on_weekly_kpi_rating_change
+  BEFORE INSERT OR UPDATE ON review_weekly_kpi_ratings
+  FOR EACH ROW
+  EXECUTE FUNCTION update_kpi_rolling_average();
+
+CREATE OR REPLACE FUNCTION check_overdue_actions()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF NEW.target_date < CURRENT_DATE AND NEW.status IN ('in_progress') THEN
+    NEW.is_overdue := true;
+  ELSE
+    NEW.is_overdue := false;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS on_action_date_change ON review_employee_actions;
+CREATE TRIGGER on_action_date_change
+  BEFORE INSERT OR UPDATE ON review_employee_actions
+  FOR EACH ROW
+  EXECUTE FUNCTION check_overdue_actions();
+
+CREATE OR REPLACE FUNCTION flag_high_ratings_for_moderation()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF NEW.rating = 4 THEN
+    NEW.requires_moderation := true;
+    NEW.moderation_status := 'pending';
+  ELSIF NEW.rating <= 1 THEN
+    NULL;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS on_competency_score_insert ON review_monthly_competency_scores;
+CREATE TRIGGER on_competency_score_insert
+  BEFORE INSERT OR UPDATE ON review_monthly_competency_scores
+  FOR EACH ROW
+  EXECUTE FUNCTION flag_high_ratings_for_moderation();

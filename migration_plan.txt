@@ -1,0 +1,409 @@
+Execution log created
+
+Ready to execute:
+  Batch AC: 25 statements
+  Batch AD: 25 statements
+
+=== BATCH AC STATEMENTS ===
+
+[AC-1] (690 chars)
+CREATE OR REPLACE FUNCTION get_active_view_as_session(admin_user_id uuid)
+RETURNS TABLE (
+  session_id uuid,
+  target_user_id uuid,
+  target_email text,
+  target_name text,
+  target_role text,
+  start...
+
+[AC-2] (6888 chars)
+DO $$
+DECLARE
+  admin_id uuid;
+  john_id uuid;
+  jane_id uuid;
+  mike_id uuid;
+  existing_user_id uuid;
+BEGIN
+  SELECT id INTO existing_user_id FROM auth.users WHERE email = 'admin@eposnow.com';
+  
+  ...
+
+[AC-3] (19093 chars)
+CREATE TABLE IF NOT EXISTS review_kpi_templates (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_by uuid NOT NULL REFERENCES profiles(id),
+  template_name text NOT NULL,
+  department text,...
+
+[AC-4] (3012 chars)
+CREATE INDEX IF NOT EXISTS idx_department_strategies_business_strategy_id 
+  ON department_strategies(business_strategy_id);
+
+CREATE INDEX IF NOT EXISTS idx_goal_milestones_assigned_to_id 
+  ON goal_m...
+
+[AC-5] (4052 chars)
+DROP POLICY IF EXISTS "Users can view their competency ratings" ON review_competency_ratings;
+CREATE POLICY "Users can view their competency ratings"
+  ON review_competency_ratings FOR SELECT
+  TO aut...
+
+[AC-6] (4639 chars)
+DROP POLICY IF EXISTS "Approvers can view rating approvals" ON review_rating_approvals;
+CREATE POLICY "Approvers can view rating approvals"
+  ON review_rating_approvals FOR SELECT
+  TO authenticated
+ ...
+
+[AC-7] (2054 chars)
+DROP POLICY IF EXISTS "System can insert half year summaries" ON half_year_review_summaries;
+CREATE POLICY "Managers can insert half year summaries"
+  ON half_year_review_summaries FOR INSERT
+  TO aut...
+
+[AC-8] (622 chars)
+DROP TRIGGER IF EXISTS update_training_module_pages_updated_at ON training_module_pages;
+DROP FUNCTION IF EXISTS update_training_module_pages_updated_at();
+
+CREATE OR REPLACE FUNCTION update_training_...
+
+[AC-9] (3378 chars)
+DROP INDEX IF EXISTS idx_business_strategies_created_by;
+DROP INDEX IF EXISTS idx_business_strategies_owner_id;
+
+DROP INDEX IF EXISTS idx_career_development_plans_manager_id;
+
+DROP INDEX IF EXISTS idx...
+
+[AC-10] (1115 chars)
+CREATE OR REPLACE FUNCTION is_admin()
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM profiles
+    WHERE id = (select auth.ui...
+
+[AC-11] (402 chars)
+DROP POLICY IF EXISTS "System can insert job history" ON job_history;
+CREATE POLICY "System can insert job history"
+  ON job_history FOR INSERT
+  TO authenticated
+  WITH CHECK (true);
+
+DROP POLICY IF ...
+
+[AC-12] (699 chars)
+DROP POLICY IF EXISTS "System can insert job history" ON job_history;
+DROP POLICY IF EXISTS "System can manage permissions" ON user_admin_permissions;
+
+CREATE POLICY "Allow job history inserts"
+  ON j...
+
+[AC-13] (922 chars)
+ALTER TABLE job_history 
+  ALTER COLUMN job_title DROP NOT NULL,
+  ALTER COLUMN department DROP NOT NULL;
+
+CREATE OR REPLACE FUNCTION track_job_changes()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFI...
+
+[AC-14] (648 chars)
+CREATE OR REPLACE FUNCTION determine_job_change_type(
+  old_job_family_id uuid, 
+  new_job_family_id uuid, 
+  old_department text, 
+  new_department text
+)
+RETURNS text
+LANGUAGE plpgsql
+IMMUTABLE
+SET ...
+
+[AC-15] (642 chars)
+CREATE OR REPLACE FUNCTION determine_job_change_type(
+  old_job_family_id uuid, 
+  new_job_family_id uuid, 
+  old_department text, 
+  new_department text
+)
+RETURNS text
+LANGUAGE plpgsql
+IMMUTABLE
+SET ...
+
+[AC-16] (16289 chars)
+DROP TABLE IF EXISTS strategy_notifications CASCADE;
+DROP TABLE IF EXISTS strategy_approvals CASCADE;
+DROP TABLE IF EXISTS strategy_kpis CASCADE;
+DROP TABLE IF EXISTS department_strategy_actions CASCA...
+
+[AC-17] (19523 chars)
+CREATE TABLE IF NOT EXISTS review_cycles (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  manager_id uuid NOT NULL REFERENCES profiles(id),
+  cycle_name text NOT NULL,
+  strategy_id uuid REFERENCE...
+
+[AC-18] (1202 chars)
+DROP POLICY IF EXISTS "Users can view their cycles" ON review_cycles;
+DROP POLICY IF EXISTS "Managers can manage cycle members" ON review_cycle_members;
+
+CREATE POLICY "Users can view their cycles"
+  ...
+
+[AC-19] (1344 chars)
+DROP POLICY IF EXISTS "Managers can insert cycle members" ON review_cycle_members;
+
+CREATE POLICY "Authenticated users can insert cycle members"
+  ON review_cycle_members FOR INSERT
+  TO authenticated...
+
+[AC-20] (462 chars)
+DROP POLICY IF EXISTS "Users can view their cycles" ON review_cycles;
+
+CREATE POLICY "Users can view their cycles"
+  ON review_cycles FOR SELECT
+  TO authenticated
+  USING (
+    manager_id = auth.uid(...
+
+[AC-21] (2445 chars)
+DROP POLICY IF EXISTS "Managers can manage cycle KPIs" ON review_cycle_kpis;
+DROP POLICY IF EXISTS "Users can view cycle KPIs" ON review_cycle_kpis;
+
+CREATE POLICY "Users can view cycle KPIs"
+  ON rev...
+
+[AC-22] (1583 chars)
+CREATE OR REPLACE FUNCTION is_cycle_member(p_cycle_id uuid, p_user_id uuid)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_is_member boolean;
+BEGIN
+  SELE...
+
+[AC-23] (18298 chars)
+CREATE TABLE IF NOT EXISTS executive_strategies (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  title text NOT NULL,
+  description text,
+  creator_id uuid NOT NULL REFERENCES profiles(id),
+  star...
+
+[AC-24] (430 chars)
+INSERT INTO review_instances (cycle_id, employee_id, manager_id, template_type, status)
+SELECT DISTINCT
+  rcm.cycle_id,
+  rcm.employee_id,
+  rc.manager_id,
+  'generic' as template_type,
+  'upcoming' a...
+
+[AC-25] (4000 chars)
+UPDATE profiles
+SET job_title_id = (SELECT id FROM job_titles WHERE title = 'Software Engineer' LIMIT 1),
+    job_title = 'Software Engineer'
+WHERE email = 'rachel.schaanning@eposnow.com';
+
+DO $$
+DECL...
+
+
+=== BATCH AD STATEMENTS ===
+
+[AD-1] (7253 chars)
+CREATE INDEX IF NOT EXISTS idx_business_strategies_created_by ON business_strategies(created_by);
+CREATE INDEX IF NOT EXISTS idx_business_strategies_owner_id ON business_strategies(owner_id);
+
+CREATE ...
+
+[AD-2] (4940 chars)
+DROP INDEX IF EXISTS idx_action_items_owner;
+
+DROP INDEX IF EXISTS idx_career_plans_user_id;
+
+DROP INDEX IF EXISTS idx_job_family_competencies_job_family;
+
+DROP INDEX IF EXISTS idx_strategic_goals_dep...
+
+[AD-3] (1961 chars)
+DROP POLICY IF EXISTS "Allow job history inserts" ON job_history;
+CREATE POLICY "Allow job history inserts"
+  ON job_history
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    changed_by = (select aut...
+
+[AD-4] (770 chars)
+CREATE OR REPLACE FUNCTION calculate_nine_box_position(
+  p_kpi_average numeric,
+  p_competency_average numeric
+)
+RETURNS text
+LANGUAGE plpgsql
+IMMUTABLE
+SET search_path = public
+AS $$
+DECLARE
+  v_per...
+
+[AD-5] (16579 chars)
+CREATE TABLE IF NOT EXISTS one_to_one_review_cycles (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  manager_id uuid REFERENCES profiles(id) NOT NULL,
+  cycle_name text NOT NULL,
+  cycle_start_dat...
+
+[AD-6] (15293 chars)
+CREATE TABLE IF NOT EXISTS skill_types (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL UNIQUE,
+  description TEXT,
+  icon TEXT,
+  sort_order INTEGER DEFAULT 0,
+  is_active BOOL...
+
+[AD-7] (15703 chars)
+CREATE TABLE IF NOT EXISTS skill_rating_scale (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  rating_name TEXT NOT NULL UNIQUE,
+  rating_value INTEGER NOT NULL UNIQUE,
+  description TEXT,
+  color...
+
+[AD-8] (10429 chars)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'career_plans' AND column_name = 'quiz_session_id'
+  ) THEN
+    ALTER TABLE career_plans ADD COLUMN qu...
+
+[AD-9] (11735 chars)
+CREATE INDEX IF NOT EXISTS idx_assessment_approvals_approved_by_fkey ON assessment_approvals(approved_by);
+CREATE INDEX IF NOT EXISTS idx_assessment_approvals_skill_id_fkey ON assessment_approvals(ski...
+
+[AD-10] (6139 chars)
+DROP POLICY IF EXISTS "Managers can manage summaries" ON review_summaries;
+DROP POLICY IF EXISTS "Users can view summaries for their meetings" ON review_summaries;
+
+CREATE POLICY "Managers can manage ...
+
+[AD-11] (317 chars)
+DROP POLICY IF EXISTS "System can create notifications" ON assessment_notifications;
+
+CREATE POLICY "System can create notifications" ON assessment_notifications
+FOR INSERT
+TO authenticated
+WITH CHECK...
+
+[AD-12] (7939 chars)
+DROP INDEX IF EXISTS idx_reviews_user_id_fkey;
+DROP INDEX IF EXISTS idx_moderation_queue_moderator;
+DROP INDEX IF EXISTS idx_copilot_functions_category;
+DROP INDEX IF EXISTS idx_training_sessions_date...
+
+[AD-13] (9855 chars)
+CREATE INDEX IF NOT EXISTS idx_assessment_approvals_approved_by 
+  ON assessment_approvals(approved_by);
+CREATE INDEX IF NOT EXISTS idx_assessment_approvals_skill_id 
+  ON assessment_approvals(skill_i...
+
+[AD-14] (8346 chars)
+DROP INDEX IF EXISTS idx_department_skills_matrix_created_by_fkey;
+DROP INDEX IF EXISTS idx_department_skills_matrix_job_family_id_fkey;
+DROP INDEX IF EXISTS idx_department_skills_matrix_skill_type_id...
+
+[AD-15] (4213 chars)
+CREATE INDEX IF NOT EXISTS idx_assessment_notifications_recipient_id
+  ON assessment_notifications(recipient_id);
+
+CREATE INDEX IF NOT EXISTS idx_business_strategies_created_by
+  ON business_strategie...
+
+[AD-16] (10633 chars)
+CREATE INDEX IF NOT EXISTS idx_manager_skill_assessments_employee_id_fkey
+  ON manager_skill_assessments(employee_id);
+CREATE INDEX IF NOT EXISTS idx_manager_skill_assessments_manager_id_fkey
+  ON man...
+
+[AD-17] (9206 chars)
+DROP POLICY IF EXISTS "Managers and employees can view their checkins" ON one_to_one_weekly_checkins;
+CREATE POLICY "Managers and employees can view their checkins"
+  ON one_to_one_weekly_checkins FOR...
+
+[AD-18] (12107 chars)
+DROP POLICY IF EXISTS "Managers can create review cycles" ON review_cycles;
+CREATE POLICY "Managers can create review cycles"
+  ON review_cycles FOR INSERT
+  TO authenticated
+  WITH CHECK (manager_id ...
+
+[AD-19] (14287 chars)
+DROP POLICY IF EXISTS "Admins can manage skill types" ON skill_types;
+CREATE POLICY "Admins can manage skill types"
+  ON skill_types FOR ALL
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FR...
+
+[AD-20] (5436 chars)
+DROP POLICY IF EXISTS "Admin can view all quiz sessions" ON career_quiz_sessions;
+CREATE POLICY "Admin can view all quiz sessions"
+  ON career_quiz_sessions FOR SELECT
+  TO authenticated
+  USING (
+   ...
+
+[AD-21] (1420 chars)
+DROP POLICY IF EXISTS "Admins can insert profiles" ON profiles;
+DROP POLICY IF EXISTS "Users can insert own profile" ON profiles;
+
+CREATE POLICY "Users can insert own profile or admins can insert any"...
+
+[AD-22] (736 chars)
+DROP POLICY IF EXISTS "Admins can insert profiles" ON profiles;
+DROP POLICY IF EXISTS "Users can insert own profile" ON profiles;
+DROP POLICY IF EXISTS "Users can insert own profile or admins can inse...
+
+[AD-23] (410 chars)
+DROP POLICY IF EXISTS "Users can create own profile" ON profiles;
+
+DROP POLICY IF EXISTS "Users can insert own profile or admins can insert any" ON profiles;
+
+CREATE POLICY "Users can insert own profi...
+
+[AD-24] (1415 chars)
+WITH new_user AS (
+  INSERT INTO auth.users (
+    instance_id,
+    id,
+    aud,
+    role,
+    email,
+    encrypted_password,
+    email_confirmed_at,
+    invited_at,
+    confirmation_sent_at,
+    raw_a...
+
+[AD-25] (146 chars)
+UPDATE auth.users
+SET 
+  encrypted_password = crypt('admin123', gen_salt('bf')),
+  updated_at = now()
+WHERE email = 'nicola.hurcombe@eposnow.com';

@@ -1,0 +1,206 @@
+{
+  "ac": [
+    {
+      "file": "ac_01.sql",
+      "size": 690
+    },
+    {
+      "file": "ac_02.sql",
+      "size": 6888
+    },
+    {
+      "file": "ac_03.sql",
+      "size": 19093
+    },
+    {
+      "file": "ac_04.sql",
+      "size": 3012
+    },
+    {
+      "file": "ac_05.sql",
+      "size": 4052
+    },
+    {
+      "file": "ac_06.sql",
+      "size": 4639
+    },
+    {
+      "file": "ac_07.sql",
+      "size": 2054
+    },
+    {
+      "file": "ac_08.sql",
+      "size": 622
+    },
+    {
+      "file": "ac_09.sql",
+      "size": 3378
+    },
+    {
+      "file": "ac_10.sql",
+      "size": 1115
+    },
+    {
+      "file": "ac_11.sql",
+      "size": 402
+    },
+    {
+      "file": "ac_12.sql",
+      "size": 699
+    },
+    {
+      "file": "ac_13.sql",
+      "size": 922
+    },
+    {
+      "file": "ac_14.sql",
+      "size": 648
+    },
+    {
+      "file": "ac_15.sql",
+      "size": 642
+    },
+    {
+      "file": "ac_16.sql",
+      "size": 16289
+    },
+    {
+      "file": "ac_17.sql",
+      "size": 19523
+    },
+    {
+      "file": "ac_18.sql",
+      "size": 1202
+    },
+    {
+      "file": "ac_19.sql",
+      "size": 1344
+    },
+    {
+      "file": "ac_20.sql",
+      "size": 462
+    },
+    {
+      "file": "ac_21.sql",
+      "size": 2445
+    },
+    {
+      "file": "ac_22.sql",
+      "size": 1583
+    },
+    {
+      "file": "ac_23.sql",
+      "size": 18298
+    },
+    {
+      "file": "ac_24.sql",
+      "size": 430
+    },
+    {
+      "file": "ac_25.sql",
+      "size": 4000
+    }
+  ],
+  "ad": [
+    {
+      "file": "ad_01.sql",
+      "size": 7253
+    },
+    {
+      "file": "ad_02.sql",
+      "size": 4940
+    },
+    {
+      "file": "ad_03.sql",
+      "size": 1961
+    },
+    {
+      "file": "ad_04.sql",
+      "size": 770
+    },
+    {
+      "file": "ad_05.sql",
+      "size": 16579
+    },
+    {
+      "file": "ad_06.sql",
+      "size": 15293
+    },
+    {
+      "file": "ad_07.sql",
+      "size": 15703
+    },
+    {
+      "file": "ad_08.sql",
+      "size": 10429
+    },
+    {
+      "file": "ad_09.sql",
+      "size": 11735
+    },
+    {
+      "file": "ad_10.sql",
+      "size": 6139
+    },
+    {
+      "file": "ad_11.sql",
+      "size": 317
+    },
+    {
+      "file": "ad_12.sql",
+      "size": 7939
+    },
+    {
+      "file": "ad_13.sql",
+      "size": 9855
+    },
+    {
+      "file": "ad_14.sql",
+      "size": 8346
+    },
+    {
+      "file": "ad_15.sql",
+      "size": 4213
+    },
+    {
+      "file": "ad_16.sql",
+      "size": 10633
+    },
+    {
+      "file": "ad_17.sql",
+      "size": 9206
+    },
+    {
+      "file": "ad_18.sql",
+      "size": 12107
+    },
+    {
+      "file": "ad_19.sql",
+      "size": 14287
+    },
+    {
+      "file": "ad_20.sql",
+      "size": 5436
+    },
+    {
+      "file": "ad_21.sql",
+      "size": 1420
+    },
+    {
+      "file": "ad_22.sql",
+      "size": 736
+    },
+    {
+      "file": "ad_23.sql",
+      "size": 410
+    },
+    {
+      "file": "ad_24.sql",
+      "size": 1415
+    },
+    {
+      "file": "ad_25.sql",
+      "size": 146
+    }
+  ]
+}

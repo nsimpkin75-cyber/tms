@@ -1,0 +1,208 @@
+{
+  "aa_sections": [
+    [
+      "Seed Test Data for Reviews System",
+      6612
+    ],
+    [
+      "Fix Profile Insert Policy",
+      461
+    ],
+    [
+      "Add Review Management Policies",
+      2511
+    ],
+    [
+      "Setup Automatic Profile Creation",
+      1461
+    ],
+    [
+      "Fix Test User Identities",
+      865
+    ],
+    [
+      "Remove Problematic Auth Trigger",
+      741
+    ],
+    [
+      "Add Admin Role and Comprehensive Admin Policies",
+      12336
+    ],
+    [
+      "Create Admin Test User",
+      1944
+    ],
+    [
+      "Add Career Progression to Job Families",
+      1024
+    ],
+    [
+      "Add Multiple Progression Options and Learning Resources",
+      1797
+    ],
+    [
+      "Add Job Family Details Fields",
+      1222
+    ],
+    [
+      "Add Sort Order to Job Families",
+      931
+    ],
+    [
+      "Create Training Module to Job Family Linking System",
+      2837
+    ],
+    [
+      "Update Job Family Levels with Data Migration (Correct Order)",
+      1756
+    ],
+    [
+      "Add Manager Relationship and Strategic Roadmap System",
+      11951
+    ],
+    [
+      "Career Pathways Features",
+      8400
+    ],
+    [
+      "Job History Tracking System",
+      7998
+    ],
+    [
+      "Career Plans and Approval System",
+      8623
+    ],
+    [
+      "Progression Criteria and Skills Assessment System",
+      10368
+    ],
+    [
+      "Create Copilot Configuration System",
+      11622
+    ],
+    [
+      "Create Review Form Templates System",
+      11294
+    ],
+    [
+      "Create Competency Framework System",
+      14730
+    ],
+    [
+      "Create Simplified Progression Criteria System",
+      2588
+    ],
+    [
+      "Add Emoji Support to Competency Framework",
+      843
+    ],
+    [
+      "Add Language Settings",
+      2526
+    ]
+  ],
+  "ab_sections": [
+    [
+      "Fix Security and Performance Issues - Part 1",
+      4940
+    ],
+    [
+      "Fix Security and Performance Issues - Part 2",
+      9477
+    ],
+    [
+      "Fix Security and Performance Issues - Part 3",
+      9027
+    ],
+    [
+      "Fix Security and Performance Issues - Part 4 (Corrected)",
+      12728
+    ],
+    [
+      "Remove Unused Indexes and Fix Security Issues",
+      5918
+    ],
+    [
+      "Add Manager Guidance Field to Competencies",
+      784
+    ],
+    [
+      "Add Competency Framework Description Setting",
+      2491
+    ],
+    [
+      "Add Detailed Fields to Competency Levels",
+      1390
+    ],
+    [
+      "Add Success Measures and KPIs to Strategic Goals",
+      2435
+    ],
+    [
+      "Add Departments and Milestones System for Strategic Goals",
+      8510
+    ],
+    [
+      "Add User Status Tracking",
+      2069
+    ],
+    [
+      "Add Missing Foreign Key Indexes for Performance",
+      8059
+    ],
+    [
+      "Optimize RLS Policies - Part 1 (Profiles, System Settings, Departments, Job Titles)",
+      4763
+    ],
+    [
+      "Optimize RLS Policies - Part 2 (Goal Milestones and Strategy Tables)",
+      8363
+    ],
+    [
+      "Optimize RLS Policies - Part 3 (Standalone Strategies)",
+      4909
+    ],
+    [
+      "Remove Unused Indexes",
+      2437
+    ],
+    [
+      "Fix Function Search Paths for Security",
+      2785
+    ],
+    [
+      "Create Comprehensive Review and One-to-One Meeting System",
+      15386
+    ],
+    [
+      "Create Performance Ratings Tracking System",
+      6454
+    ],
+    [
+      "Update Review System for Weekly Check-ins and Multiple Review Types",
+      7196
+    ],
+    [
+      "Create Test Implementation Users (Simplified)",
+      6543
+    ],
+    [
+      "Add AI Intervention Settings to Copilot Config",
+      1965
+    ],
+    [
+      "Fix User Status View Permissions",
+      2533
+    ],
+    [
+      "Enhanced Admin Access Level System",
+      8942
+    ],
+    [
+      "Add Custom E-Learning Module Builder System",
+      3624
+    ]
+  ],
+  "total_aa_sections": 25,
+  "total_ab_sections": 25
+}
