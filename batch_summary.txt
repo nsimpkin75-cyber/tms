@@ -1,0 +1,7 @@
+SQL Batch Summary
+=================
+
+Batch AA: 127441 bytes, 3937 lines
+Batch AB: 143728 bytes, 3960 lines
+
+Total: 271169 bytes

@@ -1,0 +1,19 @@
+{
+  "batch_aa": {
+    "total_size_bytes": 127441,
+    "total_lines": 3938,
+    "num_sections": 1,
+    "sections": [
+      "Section 1: 127439 bytes"
+    ]
+  },
+  "batch_ab": {
+    "total_size_bytes": 143728,
+    "total_lines": 3961,
+    "num_sections": 1,
+    "sections": [
+      "Section 1: 143726 bytes"
+    ]
+  },
+  "strategy": "Will execute full batches using execute_sql tool"
+}
