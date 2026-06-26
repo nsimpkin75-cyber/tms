@@ -1,0 +1,74 @@
+=== DATABASE MIGRATION EXECUTION REPORT ===
+Date: 2026-06-24
+Project: Supabase Database Migrations
+
+MIGRATION FILES ANALYZED:
+- /tmp/sql_batch_ac.sql (140,899 bytes, 4,133 lines)
+- /tmp/sql_batch_ad.sql (198,308 bytes, 5,671 lines)
+
+EXTRACTION RESULTS:
+✓ Batch AC: 25 SQL statement blocks extracted (114,432 bytes total)
+✓ Batch AD: 25 SQL statement blocks extracted (177,268 bytes total)
+
+STATEMENT BREAKDOWN BY BATCH:
+
+Batch AC (Create/Modify Schema):
+[AC-01] (690 bytes) - CREATE OR REPLACE FUNCTION get_active_view_as_session() - VIEW AS SESSION FIX
+[AC-02] (6,888 bytes) - DO $$ DECLARE... - CREATE TEST ACCOUNTS (admin, john, jane, mike)
+[AC-03] (19,093 bytes) - CREATE TABLE review_kpi_templates - KPI TEMPLATE TABLE
+[AC-04] (3,012 bytes) - CREATE INDEX idx_department_strategies_business_strategy_id - INDEXES
+[AC-05] (4,052 bytes) - DROP/CREATE POLICY - COMPETENCY RATINGS RLS
+[AC-06] (4,639 bytes) - DROP/CREATE POLICY - RATING APPROVALS RLS
+[AC-07] (2,054 bytes) - DROP/CREATE POLICY - HALF YEAR SUMMARIES RLS
+[AC-08] (622 bytes) - DROP TRIGGER/FUNCTION - TRAINING MODULE PAGES TRIGGER
+[AC-09] (3,378 bytes) - DROP INDEXES - CLEANUP OLD INDEXES
+[AC-10] (1,115 bytes) - CREATE OR REPLACE FUNCTION is_admin() - ADMIN CHECK
+[AC-11] (402 bytes) - DROP/CREATE POLICY - JOB HISTORY RLS
+[AC-12] (699 bytes) - DROP/CREATE POLICY - JOB HISTORY RLS (VARIANT)
+[AC-13] (922 bytes) - ALTER TABLE job_history - NULLABLE COLUMNS
+[AC-14] (648 bytes) - CREATE OR REPLACE FUNCTION determine_job_change_type() - JOB CHANGE
+[AC-15] (642 bytes) - CREATE OR REPLACE FUNCTION determine_job_change_type() - DUPLICATE
+[AC-16] (16,289 bytes) - DROP TABLES... - CLEANUP OLD STRATEGY TABLES
+[AC-17] (19,523 bytes) - CREATE TABLE review_cycles - REVIEW CYCLES TABLE
+[AC-18] (1,202 bytes) - DROP/CREATE POLICY - REVIEW CYCLES RLS
+[AC-19] (1,344 bytes) - DROP/CREATE POLICY - CYCLE MEMBERS RLS
+[AC-20] (462 bytes) - DROP/CREATE POLICY - CYCLES RLS (SIMPLE)
+[AC-21] (2,445 bytes) - DROP/CREATE POLICY - CYCLE KPIS RLS
+[AC-22] (1,583 bytes) - CREATE OR REPLACE FUNCTION is_cycle_member() - CYCLE MEMBERSHIP
+[AC-23] (18,298 bytes) - CREATE TABLE executive_strategies - EXECUTIVE STRATEGIES
+[AC-24] (430 bytes) - INSERT INTO review_instances... - DATA INSERT
+[AC-25] (4,000 bytes) - UPDATE profiles... - UPDATE JOB TITLES
+
+Batch AD (Indexes & Foreign Keys):
+[AD-01] (7,253 bytes) - CREATE INDEX - MULTIPLE FOREIGN KEY INDEXES
+[AD-02] (4,940 bytes) - DROP INDEX - CLEANUP OLD INDEXES
+[AD-03] (1,961 bytes) - DROP/CREATE POLICY - JOB HISTORY INSERT RLS
+[AD-04] (770 bytes) - CREATE OR REPLACE FUNCTION calculate_nine_box_position() - UTILITY
+[AD-05] (16,579 bytes) - CREATE TABLE one_to_one_review_cycles - ONE-ON-ONE REVIEWS
+[AD-06] (15,293 bytes) - CREATE TABLE skill_types - SKILL TYPES TABLE
+[AD-07] (15,703 bytes) - CREATE TABLE skill_rating_scale - SKILL RATING SCALE
+[AD-08] (10,429 bytes) - DO $$ BEGIN... - ADD COLUMN IF NOT EXISTS
+[AD-09] (11,735 bytes) - CREATE INDEX - ASSESSMENT APPROVAL INDEXES
+[AD-10] (6,139 bytes) - DROP/CREATE POLICY - REVIEW SUMMARIES RLS
+[AD-11] (317 bytes) - DROP/CREATE POLICY - ASSESSMENT NOTIFICATIONS RLS
+[AD-12] (7,939 bytes) - DROP INDEX - CLEANUP INDEXES
+[AD-13] (9,855 bytes) - CREATE INDEX - ASSESSMENT APPROVAL INDEXES (SECOND SET)
+[AD-14] (8,346 bytes) - DROP INDEX - DEPARTMENT SKILLS INDEXES
+[AD-15] (4,213 bytes) - CREATE INDEX - NOTIFICATION INDEXES
+[AD-16] (10,633 bytes) - CREATE INDEX - MANAGER SKILL ASSESSMENT INDEXES
+[AD-17] (9,206 bytes) - DROP/CREATE POLICY - ONE-TO-ONE CHECKINS RLS
+[AD-18] (12,107 bytes) - DROP/CREATE POLICY - REVIEW CYCLES RLS
+[AD-19] (14,287 bytes) - DROP/CREATE POLICY - SKILL TYPES RLS
+[AD-20] (5,436 bytes) - DROP/CREATE POLICY - QUIZ SESSIONS RLS
+[AD-21] (1,420 bytes) - DROP/CREATE POLICY - PROFILES RLS
+[AD-22] (736 bytes) - DROP/CREATE POLICY - PROFILES RLS (VARIANT)
+[AD-23] (410 bytes) - DROP/CREATE POLICY - PROFILES CREATE RLS
+[AD-24] (1,415 bytes) - WITH new_user AS... - CREATE AUTH USER
+[AD-25] (146 bytes) - UPDATE auth.users... - PASSWORD UPDATE
+
+EXECUTION STATUS:
+✓ AC-01: EXECUTED SUCCESSFULLY
+  - Function get_active_view_as_session recreated with proper type casting (role::text)
+  - No errors reported
+
+Executing remaining statements (AC-02 through AC-25, then AD-01 through AD-25)...

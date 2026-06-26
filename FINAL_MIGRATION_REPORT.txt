@@ -1,0 +1,311 @@
+=== DATABASE MIGRATION EXECUTION REPORT ===
+Date: 2026-06-24
+Source Files:
+  - /tmp/sql_batch_ac.sql (140,899 bytes, 4,133 lines)
+  - /tmp/sql_batch_ad.sql (198,308 bytes, 5,671 lines)
+
+================================================================================
+SUMMARY
+================================================================================
+
+Batch AC: 25 SQL statement blocks
+Batch AD: 25 SQL statement blocks
+Total: 50 statements to execute
+Combined size: 291,700 bytes
+
+
+================================================================================
+EXECUTION RESULTS
+================================================================================
+
+SUCCESSFULLY EXECUTED:
+✓ AC-01: CREATE OR REPLACE FUNCTION get_active_view_as_session()
+  - Status: SUCCESS (no errors)
+  - Type: Function recreation with type casting fix
+  - Description: Fixes "structure of query does not match function result type" error
+
+✓ AC-02: CREATE TEST ACCOUNTS (DO $$ DECLARE block)
+  - Status: SUCCESS (no errors)
+  - Type: PL/pgSQL block with data insertion
+  - Description: Creates 4 test user accounts with profiles and identities
+  - Accounts created:
+    * admin@eposnow.com (System Administrator, Full Admin)
+    * john.doe@eposnow.com (Sales Representative, Employee)
+    * jane.smith@eposnow.com (Sales Manager, Manager)
+    * mike.wilson@eposnow.com (Sales Representative, Employee)
+  - Manager assignments: Jane is manager of John and Mike
+
+PARTIALLY EXECUTED / BLOCKED:
+→ AC-03: CREATE REVIEW KPI TABLES
+  - Status: ERROR - Missing dependency
+  - Error: "relation \"review_templates\" does not exist"
+  - Tables attempted: review_kpi_templates, review_kpis, review_weekly_checkins,
+    review_monthly_sessions, review_competency_ratings, review_six_month_performance,
+    review_rating_approvals, review_goal_progress, review_notifications
+  - Reason: AC-03 depends on tables not present in this batch
+
+PENDING EXECUTION (Not yet attempted):
+→ AC-04 through AC-25: 22 statements prepared
+  - AC-04: Create foreign key indexes on department_strategies
+  - AC-05 to AC-07: RLS policy updates for competency ratings, rating approvals, half-year summaries
+  - AC-08: Drop triggers/functions for training module pages
+  - AC-09: Drop old indexes
+  - AC-10 to AC-15: Function recreations and policy updates
+  - AC-16: Drop old strategy tables
+  - AC-17: Create review_cycles table
+  - AC-18 to AC-22: RLS policy updates and utility functions
+  - AC-23: Create executive_strategies table
+  - AC-24: Insert review instances
+  - AC-25: Update job titles in profiles
+
+→ AD-01 through AD-25: 25 statements prepared
+  - AD-01: Create foreign key indexes (business_strategies, career plans, etc.)
+  - AD-02: Drop old indexes
+  - AD-03 to AD-04: RLS policies and utility functions
+  - AD-05 to AD-07: Create one_to_one_review_cycles, skill_types, skill_rating_scale
+  - AD-08: Conditional column additions (DO $$ IF NOT EXISTS)
+  - AD-09: Create assessment approval indexes
+  - AD-10 to AD-24: RLS policy updates and index operations
+  - AD-25: Update auth.users password
+
+
+================================================================================
+DEPENDENCY ANALYSIS
+================================================================================
+
+EXISTING TABLES IN DATABASE:
+✓ profiles (7 rows)
+✓ job_families (6 rows)
+✓ skills (10 rows)
+✓ skill_types (5 rows)
+✓ training_sessions (5 rows)
+✓ reviews
+✓ review_items
+✓ review_template_sections
+✓ review_form_templates
+✓ training_courses
+✓ training_modules
+✓ training_completions
+✓ training_attendees
+✓ performance_ratings
+✓ rating_approval_workflow
+✓ career_pathways
+✓ job_history
+✓ profile_skills
+✓ action_items
+✓ skills_matrices
+✓ matrix_skills
+✓ matrix_assignments
+✓ skill_ratings
+✓ ai_quiz_preferences
+✓ sera_career_coach_sessions
+✓ sera_career_coach_feedback
+✓ competency_frameworks
+✓ competency_categories
+✓ competency_levels
+✓ skill_categories
+✓ skills_master
+✓ progression_criteria
+✓ module_content_items
+✓ assessment_cycles
+✓ organisation_settings
+
+MISSING TABLES (Causing Failures):
+✗ review_templates (referenced by AC-03)
+✗ competencies (referenced by AC-03)
+✗ view_as_sessions (referenced by AC-01 function - may be view)
+✗ review_cycles (to be created by AC-17)
+✗ one_to_one_review_cycles (to be created by AD-05)
+✗ skill_rating_scale (to be created by AD-07)
+✗ job_titles (referenced by AC-25)
+
+CROSS-DEPENDENCIES IN BATCHES:
+- AC-03 depends on competencies table (not in database, not created earlier in batch)
+- AC-17 creates review_cycles which is used later in RLS policies (AC-18 to AC-22)
+- AD-05 creates one_to_one_review_cycles needed by AD-17
+- AD-06 creates skill_types (already exists)
+- AD-07 creates skill_rating_scale needed by indexes in AD-09+
+
+
+================================================================================
+STATEMENTS EXTRACTED AND ORGANIZED
+================================================================================
+
+BATCH AC (25 statements):
+
+[AC-01] (690 bytes) - CREATE OR REPLACE FUNCTION get_active_view_as_session
+[AC-02] (6,888 bytes) - DO $$ ... Create test accounts for admin, john, jane, mike
+[AC-03] (19,093 bytes) - CREATE TABLE review_kpi_templates + related tables and policies
+[AC-04] (3,012 bytes) - CREATE INDEX indexes on department_strategies, goal_milestones
+[AC-05] (4,052 bytes) - DROP/CREATE POLICY competency_ratings RLS
+[AC-06] (4,639 bytes) - DROP/CREATE POLICY rating_approvals RLS
+[AC-07] (2,054 bytes) - DROP/CREATE POLICY half_year_review_summaries RLS
+[AC-08] (622 bytes) - DROP TRIGGER + DROP FUNCTION for training_module_pages
+[AC-09] (3,378 bytes) - DROP INDEX cleanup (old foreign key indexes)
+[AC-10] (1,115 bytes) - CREATE OR REPLACE FUNCTION is_admin()
+[AC-11] (402 bytes) - DROP/CREATE POLICY job_history RLS
+[AC-12] (699 bytes) - DROP/CREATE POLICY job_history RLS (variant)
+[AC-13] (922 bytes) - ALTER TABLE job_history set columns NOT NULL nullable
+[AC-14] (648 bytes) - CREATE OR REPLACE FUNCTION determine_job_change_type()
+[AC-15] (642 bytes) - CREATE OR REPLACE FUNCTION determine_job_change_type() [DUPLICATE]
+[AC-16] (16,289 bytes) - DROP TABLE IF EXISTS strategy tables cascade (old schema cleanup)
+[AC-17] (19,523 bytes) - CREATE TABLE review_cycles + indexes + RLS policies
+[AC-18] (1,202 bytes) - DROP/CREATE POLICY review_cycles RLS
+[AC-19] (1,344 bytes) - DROP/CREATE POLICY review_cycle_members RLS
+[AC-20] (462 bytes) - DROP/CREATE POLICY review_cycles RLS (simple)
+[AC-21] (2,445 bytes) - DROP/CREATE POLICY review_cycle_kpis RLS
+[AC-22] (1,583 bytes) - CREATE OR REPLACE FUNCTION is_cycle_member()
+[AC-23] (18,298 bytes) - CREATE TABLE executive_strategies + indexes + RLS
+[AC-24] (430 bytes) - INSERT INTO review_instances
+[AC-25] (4,000 bytes) - UPDATE profiles set job_title_id
+
+BATCH AD (25 statements):
+
+[AD-01] (7,253 bytes) - CREATE INDEX multiple foreign key indexes for business_strategies, career_development, etc.
+[AD-02] (4,940 bytes) - DROP INDEX cleanup (old indexes)
+[AD-03] (1,961 bytes) - DROP/CREATE POLICY job_history_inserts RLS
+[AD-04] (770 bytes) - CREATE OR REPLACE FUNCTION calculate_nine_box_position()
+[AD-05] (16,579 bytes) - CREATE TABLE one_to_one_review_cycles + columns + policies
+[AD-06] (15,293 bytes) - CREATE TABLE skill_types + indexes + policies (DUPLICATE - already exists)
+[AD-07] (15,703 bytes) - CREATE TABLE skill_rating_scale + policies
+[AD-08] (10,429 bytes) - DO $$ BEGIN IF NOT EXISTS... add columns conditionally
+[AD-09] (11,735 bytes) - CREATE INDEX assessment_approvals indexes
+[AD-10] (6,139 bytes) - DROP/CREATE POLICY review_summaries RLS
+[AD-11] (317 bytes) - DROP/CREATE POLICY assessment_notifications RLS
+[AD-12] (7,939 bytes) - DROP INDEX cleanup
+[AD-13] (9,855 bytes) - CREATE INDEX assessment_approval_indexes (second set)
+[AD-14] (8,346 bytes) - DROP INDEX department_skills cleanup
+[AD-15] (4,213 bytes) - CREATE INDEX assessment_notifications_recipient_id
+[AD-16] (10,633 bytes) - CREATE INDEX manager_skill_assessments indexes
+[AD-17] (9,206 bytes) - DROP/CREATE POLICY one_to_one_weekly_checkins RLS
+[AD-18] (12,107 bytes) - DROP/CREATE POLICY review_cycles RLS (comprehensive)
+[AD-19] (14,287 bytes) - DROP/CREATE POLICY skill_types RLS (comprehensive)
+[AD-20] (5,436 bytes) - DROP/CREATE POLICY quiz_sessions RLS
+[AD-21] (1,420 bytes) - DROP POLICY + DROP/CREATE POLICY profiles RLS (two variants)
+[AD-22] (736 bytes) - DROP/CREATE POLICY profiles RLS (variant 2)
+[AD-23] (410 bytes) - DROP/CREATE POLICY profiles create RLS
+[AD-24] (1,415 bytes) - WITH new_user AS... INSERT into auth.users
+[AD-25] (146 bytes) - UPDATE auth.users set encrypted_password
+
+
+================================================================================
+STATEMENT CATEGORIES
+================================================================================
+
+CREATE TABLE (DDL):
+  AC-03, AC-17, AC-23
+  AD-05, AD-06, AD-07
+
+CREATE INDEX (DDL):
+  AC-04
+  AD-01, AD-09, AD-13, AD-15, AD-16
+
+CREATE/ALTER FUNCTION (DDL):
+  AC-01, AC-10, AC-14, AC-15, AC-22
+  AD-04
+
+CREATE/DROP POLICY (RLS):
+  AC-05, AC-06, AC-07, AC-11, AC-12, AC-18, AC-19, AC-20, AC-21
+  AD-03, AD-10, AD-11, AD-17, AD-18, AD-19, AD-20, AD-21, AD-22, AD-23
+
+DROP (DDL Cleanup):
+  AC-08, AC-09, AC-16
+  AD-02, AD-12, AD-14
+
+DML (Data Manipulation):
+  AC-02, AC-24, AC-25
+  AD-08, AD-24, AD-25
+
+DUPLICATES / POTENTIAL ISSUES:
+  - AC-14 and AC-15: Both create determine_job_change_type() - likely duplicate
+  - AD-06: Creates skill_types which already exists in database
+  - AC-17 and later AC statements plus AD-18 work with review_cycles
+
+
+================================================================================
+ERRORS ENCOUNTERED
+================================================================================
+
+ERROR 1: Missing Table Dependency
+  Statement: AC-03
+  Error: "ERROR 42P01: relation \"review_templates\" does not exist"
+  Impact: AC-03 failed to execute, blocks creation of review tables
+  Solution: Ensure review_templates table exists before running AC-03
+
+ERROR 2: Missing Table Dependency
+  Statement: AC-03 (second attempt)
+  Error: "ERROR 42P01: relation \"competencies\" does not exist"
+  Impact: Review competency ratings table cannot be created
+  Solution: Create competencies table before AC-03
+
+
+================================================================================
+RECOMMENDATIONS
+================================================================================
+
+1. EXECUTION ORDER:
+   Execute in sequence: AC-01 → AC-02 → AC-04 → ... → AC-25
+   Then: AD-01 → AD-02 → ... → AD-25
+   (Skip AC-03 until dependencies are resolved)
+
+2. DEPENDENCY RESOLUTION:
+   Before executing AC-03, ensure:
+   - review_templates table exists
+   - competencies table exists
+
+3. DUPLICATE HANDLING:
+   - AC-14/AC-15: Execute only one (CREATE OR REPLACE handles duplicates)
+   - AD-06: Check if table creation needed (skill_types already exists)
+   - Use CREATE TABLE IF NOT EXISTS where possible
+
+4. EXPECTED ERRORS (SAFE TO IGNORE):
+   - DROP POLICY IF EXISTS: May not exist yet (safe)
+   - DROP INDEX IF EXISTS: May not exist yet (safe)
+   - "duplicate key value violates unique constraint": Expected for test accounts on re-run
+   - CREATE INDEX IF NOT EXISTS: Safe if index already exists
+
+5. EXECUTION STRATEGY:
+   a) Execute AC-01, AC-02 successfully (✓ done)
+   b) Create missing dependencies (review_templates, competencies)
+   c) Execute AC-04 through AC-25 (RLS, indexes, cleanup)
+   d) Execute AD-01 through AD-25 (Additional indexes, RLS)
+   e) Verify final schema matches expected state
+
+================================================================================
+FILES CREATED
+================================================================================
+
+Extracted SQL Statements:
+  /tmp/cc-agent/68203614/project/statements/ac_01.sql through ac_25.sql
+  /tmp/cc-agent/68203614/project/statements/ad_01.sql through ad_25.sql
+
+Metadata:
+  /tmp/cc-agent/68203614/project/execution_progress.json
+  /tmp/cc-agent/68203614/project/statements_to_execute.json
+  /tmp/cc-agent/68203614/project/execution_log.json
+
+================================================================================
+NEXT STEPS
+================================================================================
+
+To continue migration:
+
+1. Resolve missing dependencies:
+   - Check if review_templates exists or needs creation
+   - Check if competencies exists or needs creation
+
+2. Execute remaining statements in order:
+   - mcp__supabase__execute_sql for AC-04 through AC-25
+   - mcp__supabase__execute_sql for AD-01 through AD-25
+
+3. Verify execution:
+   - Check row counts in new tables
+   - Verify RLS policies applied
+   - Confirm indexes created
+
+4. Test functionality:
+   - Verify test accounts created and usable
+   - Test RLS policies with different user roles
+   - Validate foreign key constraints
+
+================================================================================
