@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Users, GraduationCap, Award, Briefcase, FileText, History, Target, CheckCircle, Map, Bot, ClipboardList, Globe, Grid3x3, Menu, X, Building2, ShieldCheck, RefreshCw, BarChart2, DatabaseBackup, Gavel, MessageSquare, PenLine, Paintbrush } from 'lucide-react';
+import { Users, GraduationCap, Award, Briefcase, FileText, History, Target, CheckCircle, Map, Bot, ClipboardList, Globe, Grid3x3, Menu, X, Building2, ShieldCheck, RefreshCw, BarChart2, DatabaseBackup, Gavel, PenLine, Paintbrush } from 'lucide-react';
 import UserManagement from '../components/admin/UserManagement';
 import TrainingManagement from '../components/admin/TrainingManagement';
 import CareerPlansManagement from '../components/admin/CareerPlansManagement';
@@ -18,12 +18,11 @@ import ExecModeratorManagement from '../components/admin/ExecModeratorManagement
 import ReviewCyclesManagement from '../components/admin/ReviewCyclesManagement';
 import ReviewStatusReport from '../components/admin/ReviewStatusReport';
 import BackfillOneToOne from '../components/admin/BackfillOneToOne';
-import SeraCareerFeedback from '../components/admin/SeraCareerFeedback';
 import RoleProfileRecommendations from '../components/admin/RoleProfileRecommendations';
 import SkillsMatrixAdmin from '../components/skills-matrix/SkillsMatrixAdmin';
 import BrandingCentre from '../components/admin/BrandingCentre';
 
-type TabType = 'users' | 'org-settings' | 'training' | 'plans' | 'jobs' | 'reports' | 'history' | 'criteria' | 'roadmap' | 'marti' | 'review-templates' | 'competencies' | 'language' | 'sm-admin' | 'moderation-workflow' | 'exec-moderators' | 'review-cycles' | 'review-report' | 'backfill-oto' | 'sera-career-feedback' | 'role-recommendations' | 'branding';
+type TabType = 'users' | 'org-settings' | 'training' | 'plans' | 'jobs' | 'reports' | 'history' | 'criteria' | 'roadmap' | 'marti' | 'review-templates' | 'competencies' | 'language' | 'sm-admin' | 'moderation-workflow' | 'exec-moderators' | 'review-cycles' | 'review-report' | 'backfill-oto' | 'role-recommendations' | 'branding';
 
 interface NavSection {
   title: string;
@@ -84,7 +83,6 @@ export default function Admin() {
       title: 'System',
       items: [
         { id: 'marti' as TabType, label: 'Opal Configuration', icon: Bot },
-        { id: 'sera-career-feedback' as TabType, label: 'Opal Career Feedback', icon: MessageSquare },
         { id: 'moderation-workflow' as TabType, label: 'Moderation Workflows', icon: ShieldCheck },
         { id: 'exec-moderators' as TabType, label: 'Exec Moderator Access', icon: Gavel },
         { id: 'language' as TabType, label: 'Language', icon: Globe },
@@ -182,7 +180,6 @@ export default function Admin() {
           {activeTab === 'review-templates' && <ReviewTemplateManagement />}
           {activeTab === 'moderation-workflow' && <ModerationWorkflowBuilder />}
           {activeTab === 'exec-moderators' && <ExecModeratorManagement />}
-          {activeTab === 'sera-career-feedback' && <SeraCareerFeedback />}
           {activeTab === 'review-cycles' && <ReviewCyclesManagement />}
           {activeTab === 'review-report' && <ReviewStatusReport />}
           {activeTab === 'backfill-oto' && <BackfillOneToOne />}

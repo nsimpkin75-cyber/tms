@@ -35,6 +35,11 @@ export interface BrandingSettings {
   opal_welcome_message: string;
   opal_color_theme: string;
   opal_avatar_url: string | null;
+  opal_intro_heading: string;
+  opal_about: string;
+  opal_capabilities: Array<{ id: string; title: string; description: string; icon: string }>;
+  opal_personality: Record<string, number>;
+  opal_communication: Record<string, unknown>;
 }
 
 export const DEFAULT_BRANDING: BrandingSettings = {
@@ -71,6 +76,11 @@ export const DEFAULT_BRANDING: BrandingSettings = {
   opal_welcome_message: "Hi! I'm Opal, your AI Growth Guide. How can I help you today?",
   opal_color_theme: 'cyan',
   opal_avatar_url: null,
+  opal_intro_heading: '',
+  opal_about: '',
+  opal_capabilities: [],
+  opal_personality: {},
+  opal_communication: {},
 };
 
 interface BrandingContextValue {
