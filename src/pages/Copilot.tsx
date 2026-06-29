@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { MessageSquare, Send, ClipboardCheck, CheckCircle, XCircle, AlertCircle, TrendingUp, Clock, Target, Award, Zap, Settings } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useBranding } from '../contexts/BrandingContext';
 
 interface PerformanceRating {
   rating: number;
@@ -44,6 +45,8 @@ interface CopilotProps {
 
 export function Copilot({ onNavigate }: CopilotProps) {
   const { user } = useAuth();
+  const { branding } = useBranding();
+  const displayName = branding.opal_display_name || 'Opal';
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([
     {
@@ -558,9 +561,55 @@ export function Copilot({ onNavigate }: CopilotProps) {
 
   return (
     <div className="space-y-6 h-full flex flex-col">
-      <div>
-        <h1 className="text-3xl font-bold text-slate-900">Opal</h1>
-        <p className="text-slate-600 mt-2">Your AI Growth Guide</p>
+      {/* Hero greeting */}
+      <div className="card flex items-center gap-5" style={{ background: 'linear-gradient(135deg, var(--brand-card-bg, #fff) 0%, rgba(8,145,178,0.04) 100%)', borderColor: 'rgba(8,145,178,0.2)' }}>
+        <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0 ring-2" style={{ ringColor: 'var(--brand-primary)' }}>
+          {branding.opal_avatar_url ? (
+            <img src={branding.opal_avatar_url} alt={displayName} className="w-full h-full object-cover" />
+          ) : (
+            <svg width="64" height="64" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <defs>
+                <radialGradient id="cp-opal-bg" cx="50%" cy="40%" r="55%">
+                  <stop offset="0%" stopColor="#e0f7fa" />
+                  <stop offset="40%" stopColor="#b2ebf2" />
+                  <stop offset="100%" stopColor="#00bcd4" />
+                </radialGradient>
+                <radialGradient id="cp-opal-face" cx="50%" cy="45%" r="50%">
+                  <stop offset="0%" stopColor="#ffffff" />
+                  <stop offset="100%" stopColor="#e0f7fa" />
+                </radialGradient>
+                <radialGradient id="cp-opal-iris" cx="40%" cy="35%" r="55%">
+                  <stop offset="0%" stopColor="#80deea" />
+                  <stop offset="60%" stopColor="#00bcd4" />
+                  <stop offset="100%" stopColor="#006064" />
+                </radialGradient>
+                <radialGradient id="cp-opal-shimmer" cx="30%" cy="30%" r="70%">
+                  <stop offset="0%" stopColor="rgba(255,255,255,0.6)" />
+                  <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+                </radialGradient>
+              </defs>
+              <circle cx="40" cy="40" r="36" fill="url(#cp-opal-bg)" />
+              <circle cx="40" cy="40" r="36" fill="url(#cp-opal-shimmer)" />
+              <ellipse cx="40" cy="42" rx="22" ry="24" fill="url(#cp-opal-face)" />
+              <path d="M18 38 Q20 16 40 14 Q60 16 62 38 Q55 20 40 20 Q25 20 18 38Z" fill="#00838f" opacity="0.8" />
+              <ellipse cx="32" cy="39" rx="5" ry="5.5" fill="white" />
+              <ellipse cx="32" cy="39" rx="3.5" ry="3.8" fill="url(#cp-opal-iris)" />
+              <ellipse cx="32" cy="39" rx="2" ry="2.2" fill="#004d40" />
+              <circle cx="33.2" cy="37.8" r="0.9" fill="white" />
+              <ellipse cx="48" cy="39" rx="5" ry="5.5" fill="white" />
+              <ellipse cx="48" cy="39" rx="3.5" ry="3.8" fill="url(#cp-opal-iris)" />
+              <ellipse cx="48" cy="39" rx="2" ry="2.2" fill="#004d40" />
+              <circle cx="49.2" cy="37.8" r="0.9" fill="white" />
+              <path d="M38.5 44 Q40 46 41.5 44" stroke="#80cbc4" strokeWidth="1" fill="none" strokeLinecap="round" />
+              <path d="M34 50 Q40 55 46 50" stroke="#00838f" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+              <ellipse cx="29" cy="28" rx="6" ry="4" fill="white" opacity="0.3" transform="rotate(-20 29 28)" />
+            </svg>
+          )}
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Hello, I'm {displayName}</h1>
+          <p className="text-slate-500 mt-0.5">Your AI Growth Guide — here to help you grow, plan, and succeed.</p>
+        </div>
       </div>
 
       {availableFunctions.length > 0 && (
