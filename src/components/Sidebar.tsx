@@ -61,7 +61,7 @@ export function Sidebar({ currentPath, onNavigate }: SidebarProps) {
 
   const sidebarContent = (
     <div className="flex flex-col h-full">
-      <div className="p-6 border-b border-slate-700">
+      <div className="p-6 border-b border-white/10">
         <div className="flex items-center gap-3">
           {!collapsed && (
             <>
@@ -80,12 +80,12 @@ export function Sidebar({ currentPath, onNavigate }: SidebarProps) {
           )}
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="p-2 hover:bg-slate-700 rounded-lg transition-colors lg:block hidden"
+            className="p-2 hover:bg-white/10 rounded-lg transition-colors lg:block hidden"
           >
             {collapsed ? (
-              <Menu className="w-5 h-5 text-slate-400" />
+              <Menu className="w-5 h-5 text-white/60" />
             ) : (
-              <X className="w-5 h-5 text-slate-400" />
+              <X className="w-5 h-5 text-white/60" />
             )}
           </button>
         </div>
@@ -141,14 +141,17 @@ export function Sidebar({ currentPath, onNavigate }: SidebarProps) {
         )}
       </nav>
 
-      <div className="p-4 border-t border-slate-700 space-y-2">
+      <div className="p-4 border-t border-white/10 space-y-2">
         {displayProfile && (
           <div
             className={`${
               collapsed ? 'flex justify-center' : 'flex items-center gap-3'
-            } mb-4 p-3 ${isViewingAs ? 'bg-orange-800' : 'bg-slate-700'} rounded-lg`}
+            } mb-4 p-3 ${isViewingAs ? 'bg-orange-800' : 'bg-white/10'} rounded-lg`}
           >
-            <div className={`w-10 h-10 ${isViewingAs ? 'bg-orange-500' : 'bg-blue-600'} rounded-full flex items-center justify-center text-white font-medium flex-shrink-0`}>
+            <div
+              className={`w-10 h-10 ${isViewingAs ? 'bg-orange-500' : ''} rounded-full flex items-center justify-center text-white font-medium flex-shrink-0`}
+              style={isViewingAs ? {} : { backgroundColor: 'var(--brand-sidebar-active, #0891b2)' }}
+            >
               {displayProfile.full_name.charAt(0).toUpperCase()}
             </div>
             {!collapsed && (
@@ -180,7 +183,8 @@ export function Sidebar({ currentPath, onNavigate }: SidebarProps) {
     <>
       <button
         onClick={() => setMobileOpen(!mobileOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-slate-800 text-white rounded-lg"
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 text-white rounded-lg"
+        style={{ backgroundColor: 'var(--brand-sidebar-bg, #1e293b)' }}
       >
         <Menu className="w-6 h-6" />
       </button>

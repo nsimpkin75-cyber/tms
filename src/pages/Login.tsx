@@ -128,25 +128,25 @@ export function Login() {
   return (
     <div className="min-h-screen flex">
       {/* Left panel — branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-slate-900 via-slate-800 to-cyan-900 flex-col items-center justify-center p-12 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 flex-col items-center justify-center p-12 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 60%, color-mix(in srgb, var(--brand-primary) 30%, #0f172a) 100%)' }}>
         {/* Background shimmer circles */}
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-cyan-400/10 blur-3xl" />
-          <div className="absolute bottom-1/3 right-1/4 w-80 h-80 rounded-full bg-teal-300/10 blur-3xl" />
-          <div className="absolute top-1/2 right-1/3 w-48 h-48 rounded-full bg-cyan-300/5 blur-2xl" />
+          <div className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full blur-3xl" style={{ backgroundColor: 'color-mix(in srgb, var(--brand-accent) 15%, transparent)' }} />
+          <div className="absolute bottom-1/3 right-1/4 w-80 h-80 rounded-full blur-3xl" style={{ backgroundColor: 'color-mix(in srgb, var(--brand-primary) 10%, transparent)' }} />
+          <div className="absolute top-1/2 right-1/3 w-48 h-48 rounded-full blur-2xl" style={{ backgroundColor: 'color-mix(in srgb, var(--brand-accent) 8%, transparent)' }} />
         </div>
         <div className="relative z-10 text-center max-w-sm">
           <div className="flex items-center justify-center mb-8">
             <OpalAvatar size={96} />
           </div>
           <h1 className="text-5xl font-bold text-white tracking-tight mb-3">Evolo</h1>
-          <p className="text-cyan-300 text-lg font-medium mb-4">The People Operating System</p>
+          <p className="text-lg font-medium mb-4" style={{ color: 'var(--brand-accent, #06b6d4)' }}>The People Operating System</p>
           <p className="text-slate-400 text-sm leading-relaxed">
             Bringing people and organisations together for continuous growth.
           </p>
           <div className="mt-10 pt-8 border-t border-slate-700/60">
             <p className="text-slate-500 text-xs">
-              Powered by <span className="text-cyan-400 font-medium">Opal</span> — your AI Growth Guide
+              Powered by <span className="font-medium" style={{ color: 'var(--brand-accent, #06b6d4)' }}>Opal</span> — your AI Growth Guide
             </p>
           </div>
         </div>
@@ -198,9 +198,9 @@ export function Login() {
                 <p className="text-xs text-slate-500 mt-1">Password must be at least 6 characters</p>
               </div>
             ) : isForgotPassword ? (
-              <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-4">
-                <p className="text-sm text-cyan-900 font-medium">Need to reset your password?</p>
-                <p className="text-sm text-cyan-800 mt-2">
+              <div className="rounded-lg p-4 bg-slate-50 border border-slate-200">
+                <p className="text-sm font-medium text-slate-900">Need to reset your password?</p>
+                <p className="text-sm mt-2 text-slate-700">
                   Please contact your administrator to reset your password.
                 </p>
               </div>
@@ -309,7 +309,8 @@ export function Login() {
                   <button
                     type="button"
                     onClick={() => setIsSignUp(!isSignUp)}
-                    className="text-sm text-cyan-700 hover:text-cyan-900 font-medium"
+                    className="text-sm font-medium"
+                    style={{ color: 'var(--brand-primary)' }}
                   >
                     {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
                   </button>

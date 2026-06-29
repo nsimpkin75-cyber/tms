@@ -100,7 +100,15 @@
 
 @layer components {
   .btn-primary {
-    @apply bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg transition-colors;
+    background-color: var(--brand-primary);
+    color: #ffffff;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: var(--brand-btn-radius, 0.5rem);
+    transition: background-color 0.15s;
+  }
+  .btn-primary:hover {
+    background-color: var(--brand-primary-dark);
   }
 
   .btn-secondary {
@@ -108,18 +116,122 @@
   }
 
   .card {
-    @apply bg-white rounded-lg shadow-sm border border-slate-200 p-6;
+    background-color: var(--brand-card-bg, #ffffff);
+    border-radius: var(--brand-card-radius, 0.75rem);
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    padding: 1.5rem;
   }
 
   .input-field {
-    @apply w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all;
+    width: 100%;
+    padding: 0.5rem 1rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.5rem;
+    outline: none;
+    transition: all 0.15s;
+  }
+  .input-field:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 2px rgba(8, 145, 178, 0.2);
   }
 
   .sidebar-item {
-    @apply flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-700 rounded-lg transition-colors cursor-pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    color: var(--brand-sidebar-text, #cbd5e1);
+    border-radius: 0.5rem;
+    transition: background-color 0.15s;
+    cursor: pointer;
+    width: 100%;
+  }
+  .sidebar-item:hover {
+    background-color: rgba(255, 255, 255, 0.08);
   }
 
   .sidebar-item-active {
-    @apply bg-blue-600 text-white;
+    background-color: var(--brand-sidebar-active, #0891b2);
+    color: #ffffff;
   }
 }
+
+/* ─── Brand Colour Overrides ────────────────────────────────────────────────
+   These rules ensure hard-coded Tailwind colour classes defer to the Branding
+   Centre CSS variables. Only mid-to-high saturation primary shades (500-700)
+   are intercepted; light tints (50/100/200) used for semantic info states are
+   intentionally left alone.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* Primary solid backgrounds (buttons, badges, active states) */
+.bg-blue-600, .bg-blue-500,
+.bg-sky-600,  .bg-sky-500,
+.bg-cyan-600, .bg-cyan-500,
+.bg-teal-600, .bg-teal-500 {
+  background-color: var(--brand-primary) !important;
+}
+
+/* Primary hover backgrounds */
+.hover\:bg-blue-700:hover, .hover\:bg-blue-600:hover,
+.hover\:bg-sky-700:hover,  .hover\:bg-sky-600:hover,
+.hover\:bg-cyan-700:hover, .hover\:bg-cyan-600:hover,
+.hover\:bg-teal-700:hover, .hover\:bg-teal-600:hover {
+  background-color: var(--brand-primary-dark) !important;
+}
+
+/* Primary text colours (links, icons, labels) */
+.text-blue-600, .text-sky-600,
+.text-cyan-600, .text-teal-600 {
+  color: var(--brand-primary) !important;
+}
+
+/* Accent tones used in marketing / decorative text */
+.text-cyan-300, .text-cyan-400,
+.text-sky-400,  .text-sky-300,
+.text-teal-400, .text-teal-300 {
+  color: var(--brand-accent) !important;
+}
+
+/* Primary hover text */
+.hover\:text-blue-800:hover, .hover\:text-blue-600:hover,
+.hover\:text-sky-800:hover,  .hover\:text-sky-600:hover,
+.hover\:text-cyan-800:hover, .hover\:text-cyan-600:hover,
+.hover\:text-teal-800:hover, .hover\:text-teal-600:hover {
+  color: var(--brand-primary-dark) !important;
+}
+
+/* Primary border colours */
+.border-blue-600, .border-blue-500,
+.border-sky-600,  .border-sky-500,
+.border-cyan-600, .border-cyan-500,
+.border-teal-600, .border-teal-500 {
+  border-color: var(--brand-primary) !important;
+}
+
+/* Focus ring colours */
+.focus\:ring-blue-500:focus,
+.focus\:ring-sky-400:focus,
+.focus\:ring-cyan-400:focus,
+.focus\:ring-teal-500:focus {
+  --tw-ring-color: var(--brand-primary) !important;
+}
+
+/* Loading spinners (border-b / border-t pattern) */
+.border-blue-600, .border-b-blue-600,
+.border-sky-600 {
+  border-color: var(--brand-primary) !important;
+}
+
+/* Teal icon/section backgrounds (career, skills) */
+.hover\:bg-teal-700:hover {
+  background-color: var(--brand-primary-dark) !important;
+}
+.hover\:text-teal-800:hover { color: var(--brand-primary-dark) !important; }
+.border-teal-600 { border-color: var(--brand-primary) !important; }
+
+/* Sidebar-related hardcoded greys (only applies inside sidebar) */
+aside .bg-slate-700  { background-color: rgba(255, 255, 255, 0.1) !important; }
+aside .bg-slate-800  { background-color: var(--brand-sidebar-bg) !important; }
+aside .border-slate-700 { border-color: rgba(255, 255, 255, 0.1) !important; }

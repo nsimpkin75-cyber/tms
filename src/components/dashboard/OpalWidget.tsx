@@ -19,10 +19,10 @@ export default function OpalWidget({ answerFn, placeholder, suggestions, title }
   }
 
   return (
-    <div className="card border border-sky-100 bg-sky-50/50">
+    <div className="card" style={{ borderColor: 'rgba(var(--brand-primary-rgb, 8 145 178) / 0.2)', background: 'var(--brand-card-bg, #fff)' }}>
       <div className="flex items-center gap-3 mb-3">
-        <div className="p-2 bg-sky-100 rounded-lg">
-          <MessageSquare className="w-4 h-4 text-sky-600" />
+        <div className="p-2 rounded-lg bg-slate-100">
+          <MessageSquare className="w-4 h-4" style={{ color: 'var(--brand-primary)' }} />
         </div>
         <div>
           <h3 className="font-semibold text-slate-900 text-sm">{title ?? 'Opal — Your AI Guide'}</h3>
@@ -37,18 +37,23 @@ export default function OpalWidget({ answerFn, placeholder, suggestions, title }
           onChange={e => setQuery(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleAsk()}
           placeholder={placeholder ?? 'Ask a question...'}
-          className="flex-1 px-3 py-2 text-sm border border-sky-200 rounded-lg focus:ring-2 focus:ring-sky-400 focus:outline-none bg-white"
+          className="flex-1 px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none bg-white"
+          onFocus={e => { e.currentTarget.style.borderColor = 'var(--brand-primary)'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(8,145,178,0.2)'; }}
+          onBlur={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.boxShadow = 'none'; }}
         />
         <button
           onClick={handleAsk}
           disabled={!query.trim()}
-          className="px-3 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 disabled:opacity-40 transition-colors"
+          className="px-3 py-2 text-white rounded-lg transition-colors disabled:opacity-40"
+          style={{ backgroundColor: 'var(--brand-primary)' }}
+          onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--brand-primary-dark)'; }}
+          onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'var(--brand-primary)'; }}
         >
           <Send className="w-4 h-4" />
         </button>
       </div>
       {response && (
-        <div className="mt-2 p-3 bg-white border border-sky-200 rounded-lg text-sm text-slate-700">
+        <div className="mt-2 p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700">
           {response}
         </div>
       )}
