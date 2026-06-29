@@ -42,12 +42,22 @@ function passesAA(fg: string, bg: string): boolean {
   return contrastRatio(fg, bg) >= 4.5;
 }
 
-// Suggest a higher-contrast foreground by nudging toward black or white
-function suggestFix(fgHex: string, bgHex: string): string {
+// Suggest a higher-contrast colour that passes 4.5:1 against the given background.
+// If `fixBg` is true we suggest a new background colour that passes against white (#fff),
+// otherwise we suggest a foreground colour that passes against `bgHex`.
+function suggestFix(bgHex: string, fixBg = false): string {
+  if (fixBg) {
+    // Darken the background until it reaches 4.5:1 against white (#ffffff, L=1)
+    // Use a known dark value that almost always passes.
+    return '#0e5f75'; // a dark teal that passes AA against white
+  }
   const bg = hexToRgb(bgHex);
-  if (!bg) return fgHex;
+  if (!bg) return '#000000';
   const bgL = relativeLuminance(...bg);
-  return bgL > 0.5 ? '#1e293b' : '#f8fafc';
+  // Pick black or white — whichever gives higher contrast
+  const contrastBlack = (bgL + 0.05) / (0 + 0.05);
+  const contrastWhite = (1 + 0.05) / (bgL + 0.05);
+  return contrastBlack >= contrastWhite ? '#0f172a' : '#f8fafc';
 }
 
 // ---------- Google Fonts loading ----------
@@ -390,29 +400,32 @@ interface ContrastCheck {
   label: string;
   fgKey: keyof BrandingSettings;
   bgKey: keyof BrandingSettings;
+  fixKey: keyof BrandingSettings;
+  fixBg: boolean;
   fgLabel: string;
   bgLabel: string;
 }
 
 const CONTRAST_CHECKS: ContrastCheck[] = [
-  { id: 'body-card',     label: 'Body text on card',       fgKey: 'color_text_primary',   bgKey: 'color_card_bg',    fgLabel: 'Primary text',   bgLabel: 'Card background' },
-  { id: 'body-bg',       label: 'Body text on background', fgKey: 'color_text_primary',   bgKey: 'color_background', fgLabel: 'Primary text',   bgLabel: 'Page background' },
-  { id: 'secondary-card',label: 'Secondary text on card',  fgKey: 'color_text_secondary', bgKey: 'color_card_bg',    fgLabel: 'Secondary text', bgLabel: 'Card background' },
-  { id: 'text-primary',  label: 'Text on primary button',  fgKey: 'color_card_bg',        bgKey: 'color_primary',    fgLabel: 'Card bg',        bgLabel: 'Primary colour' },
-  { id: 'sidebar',       label: 'Sidebar navigation text', fgKey: 'color_sidebar_text',   bgKey: 'color_sidebar_bg', fgLabel: 'Sidebar text',   bgLabel: 'Sidebar bg' },
-  { id: 'sidebar-active',label: 'Active nav on sidebar',   fgKey: 'color_card_bg',        bgKey: 'color_sidebar_active', fgLabel: 'White',      bgLabel: 'Active colour' },
+  { id: 'body-card',     label: 'Body text on card',       fgKey: 'color_text_primary',   bgKey: 'color_card_bg',        fixKey: 'color_text_primary',   fixBg: false, fgLabel: 'Primary text',   bgLabel: 'Card background' },
+  { id: 'body-bg',       label: 'Body text on background', fgKey: 'color_text_primary',   bgKey: 'color_background',     fixKey: 'color_text_primary',   fixBg: false, fgLabel: 'Primary text',   bgLabel: 'Page background' },
+  { id: 'secondary-card',label: 'Secondary text on card',  fgKey: 'color_text_secondary', bgKey: 'color_card_bg',        fixKey: 'color_text_secondary', fixBg: false, fgLabel: 'Secondary text', bgLabel: 'Card background' },
+  { id: 'text-primary',  label: 'Text on primary button',  fgKey: 'color_card_bg',        bgKey: 'color_primary',        fixKey: 'color_primary',        fixBg: true,  fgLabel: 'Button text',    bgLabel: 'Primary colour' },
+  { id: 'sidebar',       label: 'Sidebar navigation text', fgKey: 'color_sidebar_text',   bgKey: 'color_sidebar_bg',     fixKey: 'color_sidebar_text',   fixBg: false, fgLabel: 'Sidebar text',   bgLabel: 'Sidebar bg' },
+  { id: 'sidebar-active',label: 'Active nav on sidebar',   fgKey: 'color_card_bg',        bgKey: 'color_sidebar_active', fixKey: 'color_sidebar_active', fixBg: true,  fgLabel: 'Nav text',       bgLabel: 'Active colour' },
 ];
 
 function AccessibilityRow({ check, draft, onFix }: {
   check: ContrastCheck;
   draft: BrandingSettings;
-  onFix: (fgKey: keyof BrandingSettings, value: string) => void;
+  onFix: (fixKey: keyof BrandingSettings, value: string) => void;
 }) {
   const fg = draft[check.fgKey] as string;
   const bg = draft[check.bgKey] as string;
   const ratio = contrastRatio(fg, bg);
   const passes = ratio >= 4.5;
-  const fix = suggestFix(fg, bg);
+  const fix = suggestFix(bg, check.fixBg);
+  const fixLabel = check.fixBg ? check.bgLabel : check.fgLabel;
 
   return (
     <div className={`rounded-xl border p-4 ${passes ? 'border-slate-100 bg-slate-50/50' : 'border-red-100 bg-red-50/50'}`}>
@@ -462,7 +475,7 @@ function AccessibilityRow({ check, draft, onFix }: {
         </div>
         {!passes && (
           <div className="flex-shrink-0 text-right space-y-1.5">
-            <p className="text-xs text-slate-500 mb-1">Auto-fix suggestion</p>
+            <p className="text-xs text-slate-500 mb-1">Fix: change <span className="font-medium text-slate-700">{fixLabel}</span> to</p>
             <div className="flex items-center gap-2 justify-end">
               <span
                 className="w-5 h-5 rounded border border-slate-200"
@@ -472,7 +485,7 @@ function AccessibilityRow({ check, draft, onFix }: {
             </div>
             <button
               type="button"
-              onClick={() => onFix(check.fgKey, fix)}
+              onClick={() => onFix(check.fixKey, fix)}
               className="flex items-center gap-1.5 text-xs font-medium text-cyan-700 bg-cyan-50 hover:bg-cyan-100 px-3 py-1.5 rounded-lg transition-colors"
             >
               <Wand2 className="w-3 h-3" /> Apply fix
