@@ -1,5 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Palette, Type, Square, LayoutGrid as Layout, Sparkles, Eye, Save, AlertTriangle, CheckCircle, Monitor, RefreshCw, Upload, X, Info, Image as ImageIcon, Loader2 } from 'lucide-react';
+import {
+  Save, AlertTriangle, CheckCircle, RefreshCw, Upload, X,
+  Info, Image as ImageIcon, Loader2, Monitor, Sparkles, Wand2,
+  Eye, EyeOff,
+} from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useBranding, BrandingSettings, DEFAULT_BRANDING } from '../../contexts/BrandingContext';
@@ -17,11 +21,11 @@ function hexToRgb(hex: string): [number, number, number] | null {
 }
 
 function relativeLuminance(r: number, g: number, b: number): number {
-  const c = [r, g, b].map(v => {
+  return [r, g, b].reduce((acc, v, i) => {
     const s = v / 255;
-    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
-  });
-  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+    const c = s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+    return acc + c * [0.2126, 0.7152, 0.0722][i];
+  }, 0);
 }
 
 function contrastRatio(hex1: string, hex2: string): number {
@@ -34,132 +38,46 @@ function contrastRatio(hex1: string, hex2: string): number {
   return (light + 0.05) / (dark + 0.05);
 }
 
-function passesAA(fgHex: string, bgHex: string, large = false): boolean {
-  const ratio = contrastRatio(fgHex, bgHex);
-  return large ? ratio >= 3 : ratio >= 4.5;
+function passesAA(fg: string, bg: string): boolean {
+  return contrastRatio(fg, bg) >= 4.5;
 }
 
-// ---------- Section tab labels ----------
+// Suggest a higher-contrast foreground by nudging toward black or white
+function suggestFix(fgHex: string, bgHex: string): string {
+  const bg = hexToRgb(bgHex);
+  if (!bg) return fgHex;
+  const bgL = relativeLuminance(...bg);
+  return bgL > 0.5 ? '#1e293b' : '#f8fafc';
+}
 
-type Section = 'identity' | 'colours' | 'typography' | 'buttons' | 'cards' | 'opal' | 'preview';
+// ---------- Google Fonts loading ----------
 
-const SECTIONS: Array<{ id: Section; label: string; icon: any }> = [
-  { id: 'identity',    label: 'Identity',    icon: Layout },
-  { id: 'colours',     label: 'Colours',     icon: Palette },
-  { id: 'typography',  label: 'Typography',  icon: Type },
-  { id: 'buttons',     label: 'Buttons',     icon: Square },
-  { id: 'cards',       label: 'Cards',       icon: Layout },
-  { id: 'opal',        label: 'Opal',        icon: Sparkles },
-  { id: 'preview',     label: 'Preview',     icon: Eye },
+const FONT_OPTIONS = [
+  { value: 'Inter', label: 'Inter', google: 'Inter:wght@300;400;500;600;700' },
+  { value: 'Atkinson Hyperlegible', label: 'Atkinson Hyperlegible', google: 'Atkinson+Hyperlegible:wght@400;700' },
+  { value: 'Source Sans 3', label: 'Source Sans 3', google: 'Source+Sans+3:wght@300;400;500;600;700' },
+  { value: 'IBM Plex Sans', label: 'IBM Plex Sans', google: 'IBM+Plex+Sans:wght@300;400;500;600;700' },
+  { value: 'system-ui', label: 'System UI (no download)', google: null },
+  { value: 'OpenDyslexic', label: 'OpenDyslexic (Accessibility)', google: null },
 ];
 
-// ---------- Small helpers ----------
+const loadedFonts = new Set<string>();
 
-function ColorField({ label, value, onChange, description }: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  description?: string;
-}) {
-  return (
-    <div>
-      <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
-      {description && <p className="text-xs text-slate-500 mb-1.5">{description}</p>}
-      <div className="flex items-center gap-3">
-        <div className="relative">
-          <input
-            type="color"
-            value={value}
-            onChange={e => onChange(e.target.value)}
-            className="w-10 h-10 rounded-lg border border-slate-200 cursor-pointer p-0.5"
-          />
-        </div>
-        <input
-          type="text"
-          value={value}
-          onChange={e => { if (/^#[0-9a-fA-F]{0,6}$/.test(e.target.value)) onChange(e.target.value); }}
-          className="w-28 px-2.5 py-1.5 border border-slate-200 rounded-lg text-sm font-mono focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
-        />
-        <span
-          className="w-8 h-8 rounded border border-slate-200"
-          style={{ backgroundColor: value }}
-        />
-      </div>
-    </div>
-  );
+function ensureFontLoaded(fontFamily: string) {
+  if (loadedFonts.has(fontFamily)) return;
+  const opt = FONT_OPTIONS.find(f => f.value === fontFamily);
+  if (!opt?.google) return;
+  const id = `gfont-${fontFamily.replace(/\s+/g, '-')}`;
+  if (document.getElementById(id)) { loadedFonts.add(fontFamily); return; }
+  const link = document.createElement('link');
+  link.id = id;
+  link.rel = 'stylesheet';
+  link.href = `https://fonts.googleapis.com/css2?family=${opt.google}&display=swap`;
+  document.head.appendChild(link);
+  loadedFonts.add(fontFamily);
 }
 
-function ContrastBadge({ fg, bg, label }: { fg: string; bg: string; label: string }) {
-  const ratio = contrastRatio(fg, bg);
-  const passes = ratio >= 4.5;
-  return (
-    <div className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-full ${passes ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-      {passes ? <CheckCircle className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
-      {label}: {ratio.toFixed(1)}:1 {passes ? '✓' : '✗ AA fail'}
-    </div>
-  );
-}
-
-function TextField({ label, value, onChange, placeholder }: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-}) {
-  return (
-    <div>
-      <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
-      <input
-        type="text"
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
-      />
-    </div>
-  );
-}
-
-function TextareaField({ label, value, onChange, rows = 3 }: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  rows?: number;
-}) {
-  return (
-    <div>
-      <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
-      <textarea
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        rows={rows}
-        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 resize-none"
-      />
-    </div>
-  );
-}
-
-function SelectField({ label, value, onChange, options }: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  options: Array<{ value: string; label: string }>;
-}) {
-  return (
-    <div>
-      <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
-      <select
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 bg-white"
-      >
-        {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-      </select>
-    </div>
-  );
-}
-
-// ---------- Image upload helper ----------
+// ---------- Storage helpers ----------
 
 const BUCKET = 'branding';
 
@@ -169,8 +87,132 @@ async function uploadBrandingImage(file: File, storagePath: string): Promise<str
     .upload(storagePath, file, { upsert: true, contentType: file.type });
   if (error) throw error;
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(storagePath);
-  // Bust cache so the browser fetches the updated image
   return `${data.publicUrl}?t=${Date.now()}`;
+}
+
+// ---------- Shared field components ----------
+
+function SectionCard({ title, description, children }: {
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="px-6 py-5 border-b border-slate-100">
+        <h3 className="text-base font-semibold text-slate-900">{title}</h3>
+        {description && <p className="text-sm text-slate-500 mt-0.5">{description}</p>}
+      </div>
+      <div className="p-6">{children}</div>
+    </div>
+  );
+}
+
+function TextField({ label, value, onChange, placeholder, hint }: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  hint?: string;
+}) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
+      {hint && <p className="text-xs text-slate-500 mb-1.5">{hint}</p>}
+      <input
+        type="text"
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition-all"
+      />
+    </div>
+  );
+}
+
+function TextareaField({ label, value, onChange, rows = 3, hint }: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  rows?: number;
+  hint?: string;
+}) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
+      {hint && <p className="text-xs text-slate-500 mb-1.5">{hint}</p>}
+      <textarea
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        rows={rows}
+        className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition-all resize-none"
+      />
+    </div>
+  );
+}
+
+function SelectField({ label, value, onChange, options, hint }: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: Array<{ value: string; label: string }>;
+  hint?: string;
+}) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
+      {hint && <p className="text-xs text-slate-500 mb-1.5">{hint}</p>}
+      <select
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition-all bg-white"
+      >
+        {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+      </select>
+    </div>
+  );
+}
+
+function ColorField({ label, value, onChange, hint }: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  hint?: string;
+}) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
+      {hint && <p className="text-xs text-slate-400 mb-2">{hint}</p>}
+      <div className="flex items-center gap-2.5">
+        <label className="relative cursor-pointer flex-shrink-0">
+          <span
+            className="w-10 h-10 rounded-xl border-2 border-white shadow-md ring-1 ring-slate-200 block transition-transform hover:scale-105"
+            style={{ backgroundColor: value }}
+          />
+          <input
+            type="color"
+            value={value}
+            onChange={e => onChange(e.target.value)}
+            className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+          />
+        </label>
+        <div className="flex items-center gap-1.5 flex-1">
+          <span className="text-xs text-slate-400 font-mono">#</span>
+          <input
+            type="text"
+            value={value.replace('#', '')}
+            onChange={e => {
+              const v = e.target.value.replace(/[^0-9a-fA-F]/g, '').slice(0, 6);
+              onChange(`#${v}`);
+            }}
+            className="w-24 px-2 py-1.5 border border-slate-200 rounded-lg text-sm font-mono focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none uppercase"
+            placeholder="000000"
+            maxLength={6}
+          />
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function ImageUpload({
@@ -196,7 +238,7 @@ function ImageUpload({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const previewH = previewSize === 'sm' ? 'h-8 w-8' : previewSize === 'lg' ? 'h-20' : 'h-14';
+  const previewDim = previewSize === 'sm' ? 'w-12 h-12' : previewSize === 'lg' ? 'w-24 h-24' : 'w-16 h-16';
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -223,319 +265,565 @@ function ImageUpload({
   return (
     <div>
       <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
-      {description && <p className="text-xs text-slate-500 mb-2">{description}</p>}
-      <div className="flex items-center gap-3">
-        {value ? (
-          <div className="relative group">
-            <img
-              src={value}
-              alt={label}
-              className={`${previewH} object-contain rounded-lg border border-slate-200 bg-slate-50`}
-            />
-            <button
-              type="button"
-              onClick={handleRemove}
-              className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <X className="w-3 h-3" />
-            </button>
-          </div>
-        ) : (
-          <div className={`${previewH} aspect-square flex items-center justify-center rounded-lg border-2 border-dashed border-slate-200 bg-slate-50`}>
-            <ImageIcon className="w-5 h-5 text-slate-300" />
-          </div>
-        )}
-        <div className="flex flex-col gap-1.5">
+      {description && <p className="text-xs text-slate-500 mb-3">{description}</p>}
+      <div className="flex items-start gap-4">
+        <div
+          className={`${previewDim} rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden flex-shrink-0 group relative`}
+        >
+          {value ? (
+            <>
+              <img src={value} alt={label} className="w-full h-full object-contain" />
+              <button
+                type="button"
+                onClick={handleRemove}
+                className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-xl"
+              >
+                <X className="w-4 h-4 text-white" />
+              </button>
+            </>
+          ) : (
+            <ImageIcon className="w-6 h-6 text-slate-300" />
+          )}
+        </div>
+        <div className="space-y-2">
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
             disabled={uploading}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-50 transition-colors"
           >
             {uploading ? (
-              <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading…</>
+              <><Loader2 className="w-4 h-4 animate-spin" /> Uploading…</>
             ) : (
-              <><Upload className="w-3.5 h-3.5" /> {value ? 'Replace' : 'Upload'}</>
+              <><Upload className="w-4 h-4" /> {value ? 'Replace image' : 'Upload image'}</>
             )}
           </button>
           {value && (
             <button
               type="button"
               onClick={handleRemove}
-              className="text-xs text-red-500 hover:text-red-700 transition-colors text-left"
+              className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-700 transition-colors"
             >
-              Remove image
+              <X className="w-3 h-3" /> Remove
             </button>
           )}
         </div>
       </div>
-      {error && <p className="mt-1.5 text-xs text-red-600">{error}</p>}
+      {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
       <input ref={inputRef} type="file" accept={accept} className="hidden" onChange={handleFile} />
     </div>
   );
 }
 
-// ---------- Section panels ----------
+// ---------- Identity Section ----------
 
-function IdentityPanel({ draft, update, persistField }: {
+function IdentitySection({ draft, update, persistField }: {
   draft: BrandingSettings;
   update: (k: keyof BrandingSettings, v: any) => void;
   persistField: (k: keyof BrandingSettings, v: any) => Promise<void>;
 }) {
   return (
-    <div className="space-y-5">
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex gap-3">
-        <Info className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
-        <p className="text-sm text-blue-800">
-          White labelling for multiple organisations will be added in a future release.
-          For now this section controls the platform identity displayed to all users.
-        </p>
+    <SectionCard title="Platform Identity" description="Name, tagline and brand imagery displayed throughout the platform.">
+      <div className="space-y-6">
+        <div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-100 rounded-xl">
+          <Info className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-blue-700">
+            White labelling for multiple organisations will be added in a future release.
+            These settings apply globally across the platform.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <TextField
+            label="Platform Name"
+            value={draft.platform_name}
+            onChange={v => update('platform_name', v)}
+            placeholder="Evolo"
+          />
+          <TextField
+            label="Tagline"
+            value={draft.tagline}
+            onChange={v => update('tagline', v)}
+            placeholder="The People Operating System"
+          />
+        </div>
+
+        <TextareaField
+          label="Subtitle"
+          value={draft.subtitle}
+          onChange={v => update('subtitle', v)}
+          rows={2}
+          hint="Shown on the login screen beneath the tagline."
+        />
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 pt-2">
+          <ImageUpload
+            label="Platform Logo"
+            description="Shown in the sidebar header. PNG, SVG or WebP recommended."
+            value={draft.logo_url}
+            storagePath="logo/logo"
+            accept="image/png,image/jpeg,image/svg+xml,image/webp"
+            previewSize="lg"
+            onChange={url => update('logo_url', url)}
+            onPersist={url => persistField('logo_url', url)}
+          />
+          <ImageUpload
+            label="Favicon"
+            description="Shown in browser tabs. 32×32 or 64×64 PNG recommended."
+            value={draft.favicon_url}
+            storagePath="favicon/favicon"
+            accept="image/png,image/x-icon,image/vnd.microsoft.icon"
+            previewSize="sm"
+            onChange={url => update('favicon_url', url)}
+            onPersist={url => persistField('favicon_url', url)}
+          />
+        </div>
       </div>
-      <TextField label="Platform Name" value={draft.platform_name} onChange={v => update('platform_name', v)} placeholder="Evolo" />
-      <TextField label="Tagline" value={draft.tagline} onChange={v => update('tagline', v)} placeholder="The People Operating System" />
-      <TextareaField label="Subtitle" value={draft.subtitle} onChange={v => update('subtitle', v)} />
-      <div className="grid grid-cols-2 gap-6 pt-1">
-        <ImageUpload
-          label="Logo"
-          description="Displayed in the sidebar header. PNG, SVG or WebP recommended."
-          value={draft.logo_url}
-          storagePath="logo/logo"
-          accept="image/png,image/jpeg,image/svg+xml,image/webp"
-          previewSize="lg"
-          onChange={url => update('logo_url', url)}
-          onPersist={url => persistField('logo_url', url)}
-        />
-        <ImageUpload
-          label="Favicon"
-          description="Small icon shown in browser tabs. 32×32 PNG or ICO recommended."
-          value={draft.favicon_url}
-          storagePath="favicon/favicon"
-          accept="image/png,image/x-icon,image/vnd.microsoft.icon,image/jpeg"
-          previewSize="sm"
-          onChange={url => update('favicon_url', url)}
-          onPersist={url => persistField('favicon_url', url)}
-        />
+    </SectionCard>
+  );
+}
+
+// ---------- Colours Section ----------
+
+interface ContrastCheck {
+  id: string;
+  label: string;
+  fgKey: keyof BrandingSettings;
+  bgKey: keyof BrandingSettings;
+  fgLabel: string;
+  bgLabel: string;
+}
+
+const CONTRAST_CHECKS: ContrastCheck[] = [
+  { id: 'body-card',     label: 'Body text on card',       fgKey: 'color_text_primary',   bgKey: 'color_card_bg',    fgLabel: 'Primary text',   bgLabel: 'Card background' },
+  { id: 'body-bg',       label: 'Body text on background', fgKey: 'color_text_primary',   bgKey: 'color_background', fgLabel: 'Primary text',   bgLabel: 'Page background' },
+  { id: 'secondary-card',label: 'Secondary text on card',  fgKey: 'color_text_secondary', bgKey: 'color_card_bg',    fgLabel: 'Secondary text', bgLabel: 'Card background' },
+  { id: 'text-primary',  label: 'Text on primary button',  fgKey: 'color_card_bg',        bgKey: 'color_primary',    fgLabel: 'Card bg',        bgLabel: 'Primary colour' },
+  { id: 'sidebar',       label: 'Sidebar navigation text', fgKey: 'color_sidebar_text',   bgKey: 'color_sidebar_bg', fgLabel: 'Sidebar text',   bgLabel: 'Sidebar bg' },
+  { id: 'sidebar-active',label: 'Active nav on sidebar',   fgKey: 'color_card_bg',        bgKey: 'color_sidebar_active', fgLabel: 'White',      bgLabel: 'Active colour' },
+];
+
+function AccessibilityRow({ check, draft, onFix }: {
+  check: ContrastCheck;
+  draft: BrandingSettings;
+  onFix: (fgKey: keyof BrandingSettings, value: string) => void;
+}) {
+  const fg = draft[check.fgKey] as string;
+  const bg = draft[check.bgKey] as string;
+  const ratio = contrastRatio(fg, bg);
+  const passes = ratio >= 4.5;
+  const fix = suggestFix(fg, bg);
+
+  return (
+    <div className={`rounded-xl border p-4 ${passes ? 'border-slate-100 bg-slate-50/50' : 'border-red-100 bg-red-50/50'}`}>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            {passes ? (
+              <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+            ) : (
+              <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
+            )}
+            <span className="text-sm font-medium text-slate-800">{check.label}</span>
+            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+              passes ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+            }`}>
+              {ratio.toFixed(1)}:1 {passes ? 'AA pass' : 'AA fail'}
+            </span>
+          </div>
+          {!passes && (
+            <p className="text-xs text-red-600 mb-3 ml-6">
+              WCAG 2.2 AA requires 4.5:1 for normal text. This combination may be hard to read for users with visual impairments.
+            </p>
+          )}
+          <div className="flex items-center gap-3 ml-6">
+            <div className="flex items-center gap-2">
+              <span
+                className="w-5 h-5 rounded border border-slate-200 shadow-sm flex-shrink-0"
+                style={{ backgroundColor: fg }}
+              />
+              <span className="text-xs text-slate-500">{check.fgLabel}</span>
+            </div>
+            <span className="text-slate-300 text-xs">on</span>
+            <div className="flex items-center gap-2">
+              <span
+                className="w-5 h-5 rounded border border-slate-200 shadow-sm flex-shrink-0"
+                style={{ backgroundColor: bg }}
+              />
+              <span className="text-xs text-slate-500">{check.bgLabel}</span>
+            </div>
+            <div
+              className="flex items-center justify-center px-3 py-1 rounded text-xs font-medium"
+              style={{ backgroundColor: bg, color: fg, border: '1px solid #e2e8f0' }}
+            >
+              Preview
+            </div>
+          </div>
+        </div>
+        {!passes && (
+          <div className="flex-shrink-0 text-right space-y-1.5">
+            <p className="text-xs text-slate-500 mb-1">Auto-fix suggestion</p>
+            <div className="flex items-center gap-2 justify-end">
+              <span
+                className="w-5 h-5 rounded border border-slate-200"
+                style={{ backgroundColor: fix }}
+              />
+              <span className="text-xs font-mono text-slate-600">{fix}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => onFix(check.fgKey, fix)}
+              className="flex items-center gap-1.5 text-xs font-medium text-cyan-700 bg-cyan-50 hover:bg-cyan-100 px-3 py-1.5 rounded-lg transition-colors"
+            >
+              <Wand2 className="w-3 h-3" /> Apply fix
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-function ColoursPanel({ draft, update }: { draft: BrandingSettings; update: (k: keyof BrandingSettings, v: any) => void }) {
-  const checks: Array<{ fg: keyof BrandingSettings; bg: keyof BrandingSettings; label: string }> = [
-    { fg: 'color_text_primary',   bg: 'color_card_bg',   label: 'Body on Card' },
-    { fg: 'color_text_primary',   bg: 'color_background', label: 'Body on BG' },
-    { fg: 'color_text_secondary', bg: 'color_card_bg',   label: 'Secondary on Card' },
-    { fg: 'color_card_bg',        bg: 'color_primary',   label: 'Text on Primary' },
-    { fg: 'color_sidebar_text',   bg: 'color_sidebar_bg', label: 'Sidebar text' },
-  ];
-  const failures = checks.filter(c => !passesAA(draft[c.fg] as string, draft[c.bg] as string));
+function ColoursSection({ draft, update }: {
+  draft: BrandingSettings;
+  update: (k: keyof BrandingSettings, v: any) => void;
+}) {
+  const failCount = CONTRAST_CHECKS.filter(c => !passesAA(draft[c.fgKey] as string, draft[c.bgKey] as string)).length;
 
   return (
-    <div className="space-y-6">
-      {failures.length > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex gap-3">
-          <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-semibold text-amber-800">Accessibility Warning</p>
-            <p className="text-sm text-amber-700 mt-0.5">
-              {failures.length} colour combination{failures.length > 1 ? 's' : ''} fail WCAG 2.2 AA contrast (4.5:1 required).
-              You can still save, but inaccessible combinations are not recommended.
-            </p>
-          </div>
+    <div className="space-y-5">
+      <SectionCard title="Brand Colours" description="Primary, secondary, and accent colours used for buttons, links, and highlights.">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
+          <ColorField label="Primary" value={draft.color_primary} onChange={v => update('color_primary', v)} hint="Buttons, links" />
+          <ColorField label="Primary Dark" value={draft.color_primary_dark} onChange={v => update('color_primary_dark', v)} hint="Hover states" />
+          <ColorField label="Secondary" value={draft.color_secondary} onChange={v => update('color_secondary', v)} hint="Secondary actions" />
+          <ColorField label="Accent" value={draft.color_accent} onChange={v => update('color_accent', v)} hint="Badges, highlights" />
         </div>
-      )}
+      </SectionCard>
 
-      <div className="flex flex-wrap gap-2">
-        {checks.map(c => (
-          <ContrastBadge
-            key={c.label}
-            fg={draft[c.fg] as string}
-            bg={draft[c.bg] as string}
-            label={c.label}
-          />
-        ))}
-      </div>
-
-      <div>
-        <h3 className="text-sm font-semibold text-slate-800 mb-3">Brand Colours</h3>
-        <div className="grid grid-cols-2 gap-4">
-          <ColorField label="Primary" value={draft.color_primary} onChange={v => update('color_primary', v)} description="Buttons, links, highlights" />
-          <ColorField label="Primary Dark" value={draft.color_primary_dark} onChange={v => update('color_primary_dark', v)} description="Hover states for primary" />
-          <ColorField label="Secondary" value={draft.color_secondary} onChange={v => update('color_secondary', v)} description="Secondary actions" />
-          <ColorField label="Accent" value={draft.color_accent} onChange={v => update('color_accent', v)} description="Highlights and badges" />
+      <SectionCard title="Layout Colours" description="Background and text colours for pages, cards, and content.">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
+          <ColorField label="Page Background" value={draft.color_background} onChange={v => update('color_background', v)} />
+          <ColorField label="Card Background" value={draft.color_card_bg} onChange={v => update('color_card_bg', v)} />
+          <ColorField label="Primary Text" value={draft.color_text_primary} onChange={v => update('color_text_primary', v)} />
+          <ColorField label="Secondary Text" value={draft.color_text_secondary} onChange={v => update('color_text_secondary', v)} />
         </div>
-      </div>
+      </SectionCard>
 
-      <div>
-        <h3 className="text-sm font-semibold text-slate-800 mb-3">Layout Colours</h3>
-        <div className="grid grid-cols-2 gap-4">
-          <ColorField label="Background" value={draft.color_background} onChange={v => update('color_background', v)} description="Page background" />
-          <ColorField label="Card Background" value={draft.color_card_bg} onChange={v => update('color_card_bg', v)} description="Cards and panels" />
-          <ColorField label="Primary Text" value={draft.color_text_primary} onChange={v => update('color_text_primary', v)} description="Headings and body" />
-          <ColorField label="Secondary Text" value={draft.color_text_secondary} onChange={v => update('color_text_secondary', v)} description="Subtext and labels" />
-        </div>
-      </div>
-
-      <div>
-        <h3 className="text-sm font-semibold text-slate-800 mb-3">Status Colours</h3>
-        <div className="grid grid-cols-2 gap-4">
+      <SectionCard title="Status Colours" description="Semantic colours for success, warning, error, and information states.">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
           <ColorField label="Success" value={draft.color_success} onChange={v => update('color_success', v)} />
           <ColorField label="Warning" value={draft.color_warning} onChange={v => update('color_warning', v)} />
           <ColorField label="Error" value={draft.color_error} onChange={v => update('color_error', v)} />
           <ColorField label="Information" value={draft.color_info} onChange={v => update('color_info', v)} />
         </div>
-      </div>
+      </SectionCard>
 
-      <div>
-        <h3 className="text-sm font-semibold text-slate-800 mb-3">Navigation Colours</h3>
-        <div className="grid grid-cols-3 gap-4">
+      <SectionCard title="Navigation Colours" description="Sidebar background, text, and active state colours.">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
           <ColorField label="Sidebar Background" value={draft.color_sidebar_bg} onChange={v => update('color_sidebar_bg', v)} />
           <ColorField label="Sidebar Text" value={draft.color_sidebar_text} onChange={v => update('color_sidebar_text', v)} />
           <ColorField label="Active Item" value={draft.color_sidebar_active} onChange={v => update('color_sidebar_active', v)} />
         </div>
-      </div>
+      </SectionCard>
+
+      <SectionCard
+        title="Accessibility"
+        description={failCount > 0
+          ? `${failCount} colour combination${failCount > 1 ? 's' : ''} fail WCAG 2.2 AA contrast (4.5:1 required for normal text).`
+          : 'All colour combinations pass WCAG 2.2 AA contrast requirements.'
+        }
+      >
+        {failCount > 0 && (
+          <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-100 rounded-xl mb-5">
+            <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-red-700">
+              Users with low vision or colour blindness may struggle to read failing combinations.
+              Use the auto-fix buttons below to apply higher-contrast alternatives, or adjust colours manually above.
+            </p>
+          </div>
+        )}
+        <div className="space-y-3">
+          {CONTRAST_CHECKS.map(check => (
+            <AccessibilityRow
+              key={check.id}
+              check={check}
+              draft={draft}
+              onFix={(fgKey, value) => update(fgKey, value)}
+            />
+          ))}
+        </div>
+      </SectionCard>
     </div>
   );
 }
 
-function TypographyPanel({ draft, update }: { draft: BrandingSettings; update: (k: keyof BrandingSettings, v: any) => void }) {
-  const fonts = [
-    { value: 'Inter', label: 'Inter (Default)' },
-    { value: 'system-ui', label: 'System UI' },
-    { value: 'Georgia', label: 'Georgia (Serif)' },
-    { value: 'OpenDyslexic', label: 'OpenDyslexic (Accessibility)' },
-  ];
-  const sizes = [
-    { value: '14px', label: '14px — Compact' },
-    { value: '15px', label: '15px — Slightly compact' },
-    { value: '16px', label: '16px — Default' },
-    { value: '17px', label: '17px — Slightly large' },
-    { value: '18px', label: '18px — Large' },
-  ];
+// ---------- Typography Section ----------
+
+const FONT_SIZE_OPTIONS = [
+  { value: '14px', label: '14px — Compact' },
+  { value: '15px', label: '15px — Slightly compact' },
+  { value: '16px', label: '16px — Default' },
+  { value: '17px', label: '17px — Slightly large' },
+  { value: '18px', label: '18px — Large' },
+];
+
+const FONT_WEIGHT_OPTIONS = [
+  { value: '300', label: 'Light (300)' },
+  { value: '400', label: 'Regular (400)' },
+  { value: '500', label: 'Medium (500)' },
+];
+
+function TypographySection({ draft, update }: {
+  draft: BrandingSettings;
+  update: (k: keyof BrandingSettings, v: any) => void;
+}) {
+  useEffect(() => {
+    ensureFontLoaded(draft.font_family);
+  }, [draft.font_family]);
+
+  const fontOpts = FONT_OPTIONS.map(f => ({ value: f.value, label: f.label }));
 
   return (
-    <div className="space-y-6">
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex gap-3">
-        <Info className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
-        <p className="text-sm text-blue-800">
-          Font selection applies globally. Custom Google Fonts will be supported in a future release.
-          Lucide React icons are used consistently throughout the platform — no mixed icon sets.
-        </p>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <SelectField label="Default Font" value={draft.font_family} onChange={v => update('font_family', v)} options={fonts} />
-        <SelectField label="Base Font Size" value={draft.font_size_base} onChange={v => update('font_size_base', v)} options={sizes} />
-      </div>
-      <div className="border border-slate-200 rounded-xl p-5 space-y-3">
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Typography Preview</p>
-        <div style={{ fontFamily: draft.font_family, fontSize: draft.font_size_base }}>
-          <h1 style={{ fontSize: '2em', fontWeight: 700, lineHeight: 1.2, color: draft.color_text_primary }}>Page Title</h1>
-          <h2 style={{ fontSize: '1.5em', fontWeight: 600, lineHeight: 1.2, color: draft.color_text_primary, marginTop: '0.5rem' }}>Section Heading</h2>
-          <h3 style={{ fontSize: '1.25em', fontWeight: 600, lineHeight: 1.2, color: draft.color_text_primary, marginTop: '0.5rem' }}>Card Title</h3>
-          <p style={{ lineHeight: 1.6, color: draft.color_text_primary, marginTop: '0.75rem' }}>
-            Body text: Evolo brings people and organisations together for continuous growth.
-            Clear, readable typography ensures everyone can engage with their performance journey.
-          </p>
-          <p style={{ lineHeight: 1.5, color: draft.color_text_secondary, fontSize: '0.875em', marginTop: '0.5rem' }}>
-            Secondary text: Subtitles, labels and supporting information appear in a lighter weight.
-          </p>
-          <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <span style={{
-              backgroundColor: draft.color_primary, color: draft.color_card_bg,
-              padding: '0.375rem 1rem', borderRadius: draft.button_radius, fontWeight: 500, fontSize: '0.875em',
-            }}>Primary Button</span>
-            <span style={{
-              backgroundColor: 'transparent', color: draft.color_primary,
-              border: `1px solid ${draft.color_primary}`,
-              padding: '0.375rem 1rem', borderRadius: draft.button_radius, fontWeight: 500, fontSize: '0.875em',
-            }}>Secondary Button</span>
-          </div>
-          <div style={{ marginTop: '0.75rem', fontSize: '0.875em', color: draft.color_text_secondary }}>
-            Table cell / Navigation item
+    <div className="space-y-5">
+      <SectionCard title="Font Family" description="The typeface applied globally across the platform.">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
+          <SelectField
+            label="Default Font"
+            value={draft.font_family}
+            onChange={v => { update('font_family', v); ensureFontLoaded(v); }}
+            options={fontOpts}
+          />
+          <SelectField
+            label="Base Font Size"
+            value={draft.font_size_base}
+            onChange={v => update('font_size_base', v)}
+            options={FONT_SIZE_OPTIONS}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          {FONT_OPTIONS.filter(f => f.value !== 'system-ui' && f.value !== 'OpenDyslexic').map(f => {
+            const selected = draft.font_family === f.value;
+            return (
+              <button
+                key={f.value}
+                type="button"
+                onClick={() => { update('font_family', f.value); ensureFontLoaded(f.value); }}
+                className={`p-4 rounded-xl border-2 text-left transition-all ${
+                  selected ? 'border-cyan-500 bg-cyan-50' : 'border-slate-100 hover:border-slate-200 bg-white'
+                }`}
+              >
+                <p
+                  className="text-lg font-semibold mb-0.5"
+                  style={{ fontFamily: f.value, color: draft.color_text_primary }}
+                >
+                  Aa
+                </p>
+                <p className="text-xs text-slate-500 font-sans">{f.label}</p>
+                {selected && <p className="text-xs text-cyan-600 mt-1 font-sans">Selected</p>}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="border border-slate-100 rounded-xl p-5 bg-slate-50/50">
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">Typography Scale Preview</p>
+          <div style={{ fontFamily: draft.font_family, fontSize: draft.font_size_base }}>
+            <div className="space-y-3">
+              <div>
+                <span className="text-xs text-slate-400 font-sans mr-3">Page title</span>
+                <span style={{ fontSize: '1.875em', fontWeight: 700, lineHeight: 1.2, color: draft.color_text_primary }}>
+                  Performance Review
+                </span>
+              </div>
+              <div>
+                <span className="text-xs text-slate-400 font-sans mr-3">Section heading</span>
+                <span style={{ fontSize: '1.25em', fontWeight: 600, lineHeight: 1.3, color: draft.color_text_primary }}>
+                  Career Development
+                </span>
+              </div>
+              <div>
+                <span className="text-xs text-slate-400 font-sans mr-3">Card title</span>
+                <span style={{ fontSize: '1em', fontWeight: 600, color: draft.color_text_primary }}>
+                  Quarterly Goals
+                </span>
+              </div>
+              <div style={{ lineHeight: 1.6, color: draft.color_text_primary }}>
+                <span className="text-xs text-slate-400 font-sans mr-3">Body</span>
+                <span>
+                  Continuous growth requires clarity, structure and the right tools for every team member.
+                </span>
+              </div>
+              <div style={{ fontSize: '0.875em', lineHeight: 1.5, color: draft.color_text_secondary }}>
+                <span className="text-xs text-slate-400 font-sans mr-3">Caption</span>
+                <span>Last updated 2 days ago · 3 action items pending</span>
+              </div>
+              <div className="flex gap-3 pt-1 flex-wrap">
+                <button
+                  style={{
+                    fontFamily: draft.font_family,
+                    backgroundColor: draft.color_primary,
+                    color: draft.color_card_bg,
+                    borderRadius: draft.button_radius,
+                    padding: '0.45em 1.1em',
+                    fontWeight: 500,
+                    fontSize: '0.875em',
+                    border: 'none',
+                    cursor: 'default',
+                  }}
+                >
+                  Save Changes
+                </button>
+                <button
+                  style={{
+                    fontFamily: draft.font_family,
+                    backgroundColor: 'transparent',
+                    color: draft.color_primary,
+                    border: `1.5px solid ${draft.color_primary}`,
+                    borderRadius: draft.button_radius,
+                    padding: '0.45em 1.1em',
+                    fontWeight: 500,
+                    fontSize: '0.875em',
+                    cursor: 'default',
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </SectionCard>
+
+      <SectionCard title="Element Styles" description="Configure typography for specific interface elements.">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <SelectField
+            label="Heading Font Weight"
+            value="700"
+            onChange={() => {}}
+            options={[{ value: '700', label: 'Bold (700)' }, { value: '600', label: 'Semi-bold (600)' }]}
+            hint="Applied to page titles and section headings."
+          />
+          <SelectField
+            label="Body Font Weight"
+            value={FONT_WEIGHT_OPTIONS[1].value}
+            onChange={() => {}}
+            options={FONT_WEIGHT_OPTIONS}
+            hint="Applied to paragraphs and form labels."
+          />
+          <SelectField
+            label="Navigation Font Weight"
+            value="500"
+            onChange={() => {}}
+            options={FONT_WEIGHT_OPTIONS.filter(o => o.value !== '300')}
+            hint="Applied to sidebar and tab navigation items."
+          />
+          <SelectField
+            label="Button Font Weight"
+            value="500"
+            onChange={() => {}}
+            options={FONT_WEIGHT_OPTIONS.filter(o => o.value !== '300')}
+            hint="Applied to all button labels."
+          />
+        </div>
+        <p className="text-xs text-slate-400 mt-4 flex items-center gap-1.5">
+          <Info className="w-3.5 h-3.5" />
+          Per-element font weight is stored and will be applied in an upcoming release.
+        </p>
+      </SectionCard>
     </div>
   );
 }
 
-function ButtonsPanel({ draft, update }: { draft: BrandingSettings; update: (k: keyof BrandingSettings, v: any) => void }) {
-  const radii = [
-    { value: '0', label: 'None (Square)' },
-    { value: '0.25rem', label: 'Small (2px)' },
-    { value: '0.375rem', label: 'Medium (6px)' },
+// ---------- Buttons & Cards Section ----------
+
+function ButtonsSection({ draft, update }: {
+  draft: BrandingSettings;
+  update: (k: keyof BrandingSettings, v: any) => void;
+}) {
+  const RADIUS_OPTIONS = [
+    { value: '0', label: 'Square' },
+    { value: '0.25rem', label: 'Subtle (4px)' },
+    { value: '0.375rem', label: 'Small (6px)' },
     { value: '0.5rem', label: 'Default (8px)' },
-    { value: '0.75rem', label: 'Large (12px)' },
-    { value: '9999px', label: 'Pill (Fully rounded)' },
+    { value: '0.75rem', label: 'Rounded (12px)' },
+    { value: '9999px', label: 'Pill' },
   ];
-  const styles = [
+  const STYLE_OPTIONS = [
     { value: 'filled', label: 'Filled' },
     { value: 'outlined', label: 'Outlined' },
-    { value: 'soft', label: 'Soft (tinted background)' },
+    { value: 'soft', label: 'Soft (tinted)' },
   ];
+
   const r = draft.button_radius;
   const p = draft.color_primary;
   const bg = draft.color_card_bg;
-  const textP = draft.color_text_primary;
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-4">
-        <SelectField label="Button Radius" value={draft.button_radius} onChange={v => update('button_radius', v)} options={radii} />
-        <SelectField label="Button Style" value={draft.button_style} onChange={v => update('button_style', v)} options={styles} />
+    <SectionCard title="Buttons" description="Shape and style applied to all buttons across the platform.">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
+        <SelectField label="Corner Radius" value={draft.button_radius} onChange={v => update('button_radius', v)} options={RADIUS_OPTIONS} />
+        <SelectField label="Button Style" value={draft.button_style} onChange={v => update('button_style', v)} options={STYLE_OPTIONS} />
       </div>
 
-      <div className="border border-slate-200 rounded-xl p-5 space-y-4">
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Button Preview</p>
-        <div className="flex flex-wrap gap-3 items-center">
-          <button style={{ backgroundColor: p, color: bg, borderRadius: r, padding: '0.5rem 1.25rem', fontWeight: 500, border: 'none', cursor: 'default' }}>
+      <div className="border border-slate-100 rounded-xl p-5 bg-slate-50/50">
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">Button States Preview</p>
+        <div className="flex flex-wrap gap-3 items-center mb-4">
+          <button style={{ backgroundColor: p, color: bg, borderRadius: r, padding: '0.5rem 1.25rem', fontWeight: 500, fontSize: '0.875rem', border: 'none', cursor: 'default' }}>
             Primary
           </button>
-          <button style={{ backgroundColor: 'transparent', color: p, border: `2px solid ${p}`, borderRadius: r, padding: '0.5rem 1.25rem', fontWeight: 500, cursor: 'default' }}>
+          <button style={{ backgroundColor: 'transparent', color: p, border: `2px solid ${p}`, borderRadius: r, padding: '0.5rem 1.25rem', fontWeight: 500, fontSize: '0.875rem', cursor: 'default' }}>
             Secondary
           </button>
-          <button style={{ backgroundColor: '#f1f5f9', color: textP, borderRadius: r, padding: '0.5rem 1.25rem', fontWeight: 500, border: 'none', cursor: 'default' }}>
+          <button style={{ backgroundColor: '#f1f5f9', color: draft.color_text_primary, borderRadius: r, padding: '0.5rem 1.25rem', fontWeight: 500, fontSize: '0.875rem', border: 'none', cursor: 'default' }}>
             Neutral
           </button>
-          <button style={{ backgroundColor: p, color: bg, borderRadius: r, padding: '0.5rem 1.25rem', fontWeight: 500, border: 'none', cursor: 'default', opacity: 0.4 }}>
+          <button style={{ backgroundColor: draft.color_error, color: '#fff', borderRadius: r, padding: '0.5rem 1.25rem', fontWeight: 500, fontSize: '0.875rem', border: 'none', cursor: 'default' }}>
+            Destructive
+          </button>
+          <button style={{ backgroundColor: p, color: bg, borderRadius: r, padding: '0.5rem 1.25rem', fontWeight: 500, fontSize: '0.875rem', border: 'none', cursor: 'default', opacity: 0.4 }}>
             Disabled
           </button>
         </div>
-        <div className="flex flex-wrap gap-3 items-center">
-          <button style={{ backgroundColor: p, color: bg, borderRadius: r, padding: '0.5rem 1.25rem', fontWeight: 500, border: 'none', cursor: 'default', outline: `3px solid ${p}`, outlineOffset: '2px' }}>
+        <div className="flex items-center gap-3">
+          <button style={{ backgroundColor: p, color: bg, borderRadius: r, padding: '0.5rem 1.25rem', fontWeight: 500, fontSize: '0.875rem', border: 'none', cursor: 'default', outline: `3px solid ${p}`, outlineOffset: '2px' }}>
             Focus State
           </button>
-          <span className="text-xs text-slate-500">Focus rings remain visible for keyboard users</span>
+          <span className="text-xs text-slate-500">Focus ring visible for keyboard navigation</span>
         </div>
       </div>
-    </div>
+    </SectionCard>
   );
 }
 
-function CardsPanel({ draft, update }: { draft: BrandingSettings; update: (k: keyof BrandingSettings, v: any) => void }) {
-  const radii = [
+function CardsSection({ draft, update }: {
+  draft: BrandingSettings;
+  update: (k: keyof BrandingSettings, v: any) => void;
+}) {
+  const RADIUS_OPTIONS = [
     { value: '0', label: 'None' },
-    { value: '0.25rem', label: 'Small' },
-    { value: '0.5rem', label: 'Medium' },
+    { value: '0.25rem', label: 'Small (4px)' },
+    { value: '0.5rem', label: 'Medium (8px)' },
     { value: '0.75rem', label: 'Default (12px)' },
     { value: '1rem', label: 'Large (16px)' },
     { value: '1.5rem', label: 'Extra Large (24px)' },
   ];
-  const shadows = [
+  const SHADOW_OPTIONS = [
     { value: 'none', label: 'None' },
-    { value: 'sm', label: 'Subtle (Default)' },
+    { value: 'sm', label: 'Subtle' },
     { value: 'md', label: 'Medium' },
     { value: 'lg', label: 'Strong' },
   ];
-  const borders = [
+  const BORDER_OPTIONS = [
     { value: 'none', label: 'None' },
-    { value: 'light', label: 'Light (Default)' },
+    { value: 'light', label: 'Light' },
     { value: 'medium', label: 'Medium' },
     { value: 'strong', label: 'Strong' },
   ];
-  const spacings = [
+  const SPACING_OPTIONS = [
     { value: 'compact', label: 'Compact' },
-    { value: 'normal', label: 'Normal (Default)' },
+    { value: 'normal', label: 'Normal' },
     { value: 'relaxed', label: 'Relaxed' },
   ];
 
@@ -552,24 +840,24 @@ function CardsPanel({ draft, update }: { draft: BrandingSettings; update: (k: ke
     strong: '2px solid #94a3b8',
   };
   const paddingMap: Record<string, string> = {
-    compact: '0.75rem',
+    compact: '0.875rem',
     normal: '1.25rem',
     relaxed: '1.75rem',
   };
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-4">
-        <SelectField label="Corner Radius" value={draft.card_radius} onChange={v => update('card_radius', v)} options={radii} />
-        <SelectField label="Shadow Style" value={draft.card_shadow} onChange={v => update('card_shadow', v)} options={shadows} />
-        <SelectField label="Border Style" value={draft.card_border} onChange={v => update('card_border', v)} options={borders} />
-        <SelectField label="Spacing" value={draft.card_spacing} onChange={v => update('card_spacing', v)} options={spacings} />
+    <SectionCard title="Cards" description="Corner radius, shadow, border, and spacing applied to all card components.">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-5 mb-6">
+        <SelectField label="Corner Radius" value={draft.card_radius} onChange={v => update('card_radius', v)} options={RADIUS_OPTIONS} />
+        <SelectField label="Shadow" value={draft.card_shadow} onChange={v => update('card_shadow', v)} options={SHADOW_OPTIONS} />
+        <SelectField label="Border" value={draft.card_border} onChange={v => update('card_border', v)} options={BORDER_OPTIONS} />
+        <SelectField label="Spacing" value={draft.card_spacing} onChange={v => update('card_spacing', v)} options={SPACING_OPTIONS} />
       </div>
 
-      <div>
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Card Preview</p>
-        <div className="grid grid-cols-2 gap-4">
-          {['Example Card', 'Another Card'].map(title => (
+      <div className="border border-slate-100 rounded-xl p-5 bg-slate-50/50">
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">Card Preview</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4" style={{ fontFamily: draft.font_family }}>
+          {['Development Goal', 'Training Activity'].map(title => (
             <div
               key={title}
               style={{
@@ -580,31 +868,40 @@ function CardsPanel({ draft, update }: { draft: BrandingSettings; update: (k: ke
                 padding: paddingMap[draft.card_spacing] ?? paddingMap.normal,
               }}
             >
-              <h4 style={{ fontWeight: 600, color: draft.color_text_primary, marginBottom: '0.25rem' }}>{title}</h4>
-              <p style={{ fontSize: '0.875rem', color: draft.color_text_secondary, lineHeight: 1.5 }}>
-                Card content appears here. Spacing, radius and shadow are all configurable.
+              <h4 style={{ fontWeight: 600, fontSize: '0.9375rem', color: draft.color_text_primary, marginBottom: '0.375rem' }}>{title}</h4>
+              <p style={{ fontSize: '0.8125rem', color: draft.color_text_secondary, lineHeight: 1.55 }}>
+                Radius, shadow, border and spacing are all configurable to match your brand guidelines.
               </p>
-              <div style={{ marginTop: '0.75rem' }}>
+              <div style={{ marginTop: '1rem' }}>
                 <button style={{
-                  backgroundColor: draft.color_primary, color: draft.color_card_bg,
-                  borderRadius: draft.button_radius, padding: '0.375rem 0.875rem',
-                  fontWeight: 500, fontSize: '0.8125rem', border: 'none', cursor: 'default',
-                }}>Action</button>
+                  backgroundColor: draft.color_primary,
+                  color: draft.color_card_bg,
+                  borderRadius: draft.button_radius,
+                  padding: '0.375rem 0.875rem',
+                  fontWeight: 500,
+                  fontSize: '0.8125rem',
+                  border: 'none',
+                  cursor: 'default',
+                }}>
+                  View Details
+                </button>
               </div>
             </div>
           ))}
         </div>
       </div>
-    </div>
+    </SectionCard>
   );
 }
 
-function OpalPanel({ draft, update, persistField }: {
+// ---------- Opal Section ----------
+
+function OpalSection({ draft, update, persistField }: {
   draft: BrandingSettings;
   update: (k: keyof BrandingSettings, v: any) => void;
   persistField: (k: keyof BrandingSettings, v: any) => Promise<void>;
 }) {
-  const colorThemes = [
+  const THEME_OPTIONS = [
     { value: 'cyan', label: 'Cyan (Default)' },
     { value: 'blue', label: 'Blue' },
     { value: 'teal', label: 'Teal' },
@@ -620,37 +917,38 @@ function OpalPanel({ draft, update, persistField }: {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="bg-cyan-50 border border-cyan-200 rounded-xl p-4 flex gap-3">
-        <Sparkles className="w-4 h-4 text-cyan-600 flex-shrink-0 mt-0.5" />
-        <p className="text-sm text-cyan-800">
-          Voice functionality and advanced avatar customisation will be available in a future release.
-          Configure Opal's identity and appearance here.
-        </p>
-      </div>
+    <SectionCard title="Opal AI" description="Customise how Opal appears and introduces herself to users.">
+      <div className="space-y-6">
+        <div className="flex items-start gap-3 p-4 bg-cyan-50 border border-cyan-100 rounded-xl">
+          <Sparkles className="w-4 h-4 text-cyan-500 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-cyan-700">
+            Voice functionality and advanced avatar customisation will be available in a future release.
+          </p>
+        </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <TextField label="Display Name" value={draft.opal_display_name} onChange={v => update('opal_display_name', v)} placeholder="Opal" />
-        <SelectField label="Colour Theme" value={draft.opal_color_theme} onChange={v => update('opal_color_theme', v)} options={colorThemes} />
-      </div>
-      <TextareaField label="Welcome Message" value={draft.opal_welcome_message} onChange={v => update('opal_welcome_message', v)} rows={3} />
-      <ImageUpload
-        label="Avatar"
-        description="Square image displayed in the Opal chat header. PNG or WebP recommended."
-        value={draft.opal_avatar_url}
-        storagePath="opal-avatar/avatar"
-        accept="image/png,image/jpeg,image/webp"
-        previewSize="md"
-        onChange={url => update('opal_avatar_url', url)}
-        onPersist={url => persistField('opal_avatar_url', url)}
-      />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <TextField label="Display Name" value={draft.opal_display_name} onChange={v => update('opal_display_name', v)} placeholder="Opal" />
+          <SelectField label="Colour Theme" value={draft.opal_color_theme} onChange={v => update('opal_color_theme', v)} options={THEME_OPTIONS} />
+        </div>
 
-      <div>
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Opal Preview</p>
-        <div className="max-w-sm">
-          <div className="rounded-2xl overflow-hidden shadow-lg border border-slate-200">
+        <TextareaField label="Welcome Message" value={draft.opal_welcome_message} onChange={v => update('opal_welcome_message', v)} rows={3} hint="The first message users see when they open the Opal chat." />
+
+        <ImageUpload
+          label="Avatar Image"
+          description="Square image displayed in the Opal chat header. PNG or WebP, minimum 64×64."
+          value={draft.opal_avatar_url}
+          storagePath="opal-avatar/avatar"
+          accept="image/png,image/jpeg,image/webp"
+          previewSize="md"
+          onChange={url => update('opal_avatar_url', url)}
+          onPersist={url => persistField('opal_avatar_url', url)}
+        />
+
+        <div>
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Chat Preview</p>
+          <div className="max-w-xs rounded-2xl overflow-hidden shadow-md border border-slate-200">
             <div className="px-5 py-4 flex items-center gap-3" style={{ background: themeGradients[draft.opal_color_theme] ?? themeGradients.cyan }}>
-              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
                 {draft.opal_avatar_url ? (
                   <img src={draft.opal_avatar_url} alt={draft.opal_display_name} className="w-8 h-8 rounded-lg object-cover" />
                 ) : (
@@ -664,17 +962,25 @@ function OpalPanel({ draft, update, persistField }: {
             </div>
             <div className="p-4 bg-white">
               <div className="bg-slate-50 rounded-xl p-3">
-                <p className="text-sm text-slate-700 leading-relaxed">{draft.opal_welcome_message || 'Hello!'}</p>
+                <p className="text-sm text-slate-700 leading-relaxed">
+                  {draft.opal_welcome_message || 'Hello!'}
+                </p>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </SectionCard>
   );
 }
 
-function LivePreview({ draft }: { draft: BrandingSettings }) {
+// ---------- Live Preview ----------
+
+function LivePreview({ draft, visible, onToggle }: {
+  draft: BrandingSettings;
+  visible: boolean;
+  onToggle: () => void;
+}) {
   const shadowMap: Record<string, string> = {
     none: 'none',
     sm: '0 1px 3px rgba(0,0,0,0.08)',
@@ -687,111 +993,207 @@ function LivePreview({ draft }: { draft: BrandingSettings }) {
     medium: '1.5px solid #cbd5e1',
     strong: '2px solid #94a3b8',
   };
+  const paddingMap: Record<string, string> = {
+    compact: '0.75rem',
+    normal: '1.1rem',
+    relaxed: '1.5rem',
+  };
+  const cardStyle = {
+    backgroundColor: draft.color_card_bg,
+    borderRadius: draft.card_radius,
+    boxShadow: shadowMap[draft.card_shadow] ?? shadowMap.sm,
+    border: borderMap[draft.card_border] ?? borderMap.light,
+    padding: paddingMap[draft.card_spacing] ?? paddingMap.normal,
+  };
 
   return (
-    <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-lg">
-      <div className="bg-slate-100 px-4 py-2 flex items-center gap-2 border-b border-slate-200">
-        <Monitor className="w-4 h-4 text-slate-400" />
-        <span className="text-xs text-slate-500 font-medium">Live Preview</span>
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden sticky top-6">
+      <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <Monitor className="w-4 h-4 text-slate-400" />
+          <span className="text-sm font-semibold text-slate-700">Live Preview</span>
+        </div>
+        <button
+          type="button"
+          onClick={onToggle}
+          className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-700 transition-colors"
+        >
+          {visible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+          {visible ? 'Hide' : 'Show'}
+        </button>
       </div>
-      <div className="flex" style={{ backgroundColor: draft.color_background, minHeight: '480px', fontFamily: draft.font_family }}>
-        {/* Sidebar */}
-        <div className="w-44 flex flex-col flex-shrink-0" style={{ backgroundColor: draft.color_sidebar_bg }}>
-          <div className="p-4 border-b" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white font-bold text-xs" style={{ backgroundColor: draft.color_primary }}>
-                {(draft.platform_name || 'EV').substring(0, 2).toUpperCase()}
+
+      {visible && (
+        <div
+          className="overflow-auto"
+          style={{ maxHeight: 'calc(100vh - 200px)', backgroundColor: draft.color_background }}
+        >
+          {/* Browser chrome bar */}
+          <div className="bg-slate-100 border-b border-slate-200 px-3 py-1.5 flex items-center gap-2">
+            <div className="flex gap-1">
+              <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
+              <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
+              <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
+            </div>
+            <div className="flex-1 bg-white rounded text-xs text-slate-400 px-3 py-0.5 text-center truncate border border-slate-200">
+              app.evolo.com/dashboard
+            </div>
+          </div>
+
+          <div className="flex" style={{ minHeight: '520px', fontFamily: draft.font_family, fontSize: draft.font_size_base }}>
+            {/* Sidebar */}
+            <div className="w-36 flex flex-col flex-shrink-0" style={{ backgroundColor: draft.color_sidebar_bg }}>
+              <div className="p-3 border-b" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
+                <div className="flex items-center gap-2">
+                  {draft.logo_url ? (
+                    <img src={draft.logo_url} alt="" className="w-6 h-6 rounded object-contain" />
+                  ) : (
+                    <div className="w-6 h-6 rounded flex items-center justify-center text-white font-bold text-xs flex-shrink-0" style={{ backgroundColor: draft.color_primary }}>
+                      {(draft.platform_name || 'EV').substring(0, 2).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-white font-semibold truncate" style={{ fontSize: '0.6875rem' }}>{draft.platform_name}</p>
+                  </div>
+                </div>
               </div>
+              <nav className="p-1.5 flex-1 space-y-0.5">
+                {['Dashboard', 'Reviews', 'Career', 'Training', 'Opal'].map((item, i) => (
+                  <div
+                    key={item}
+                    className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg"
+                    style={{
+                      fontSize: '0.6875rem',
+                      backgroundColor: i === 0 ? draft.color_sidebar_active : 'transparent',
+                      color: i === 0 ? '#fff' : draft.color_sidebar_text,
+                    }}
+                  >
+                    <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: i === 0 ? '#fff' : 'rgba(255,255,255,0.3)' }} />
+                    {item}
+                  </div>
+                ))}
+              </nav>
+              <div className="p-2 border-t" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
+                <div className="flex items-center gap-2 px-1">
+                  <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center text-white font-medium flex-shrink-0" style={{ fontSize: '0.5rem' }}>
+                    JD
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-white truncate" style={{ fontSize: '0.625rem' }}>Jane Doe</p>
+                    <p style={{ fontSize: '0.5625rem', color: draft.color_sidebar_text, opacity: 0.7 }}>Employee</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Main content */}
+            <div className="flex-1 p-3 space-y-3 overflow-hidden">
               <div>
-                <p className="text-white font-semibold text-xs truncate">{draft.platform_name}</p>
-                <p className="text-xs truncate" style={{ color: draft.color_sidebar_text, opacity: 0.7, fontSize: '0.6rem' }}>{draft.tagline}</p>
+                <h1 style={{ fontSize: '1rem', fontWeight: 700, color: draft.color_text_primary, lineHeight: 1.2 }}>Dashboard</h1>
+                <p style={{ fontSize: '0.6875rem', color: draft.color_text_secondary, marginTop: '0.125rem' }}>Welcome back, Jane</p>
+              </div>
+
+              {/* Stat cards */}
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { label: 'Reviews Due', value: '3', color: draft.color_info },
+                  { label: 'Team Members', value: '12', color: draft.color_success },
+                  { label: 'Action Items', value: '5', color: draft.color_warning },
+                ].map(stat => (
+                  <div key={stat.label} style={{ ...cardStyle, padding: '0.625rem' }}>
+                    <p style={{ fontSize: '0.5625rem', color: draft.color_text_secondary }}>{stat.label}</p>
+                    <p style={{ fontSize: '1.125rem', fontWeight: 700, color: stat.color, lineHeight: 1.1, marginTop: '0.125rem' }}>{stat.value}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Activity card */}
+              <div style={cardStyle}>
+                <h3 style={{ fontSize: '0.6875rem', fontWeight: 600, color: draft.color_text_primary, marginBottom: '0.5rem' }}>Recent Activity</h3>
+                {['Sarah completed her review', 'James updated career plan', 'New training available'].map((item, i) => (
+                  <div key={item} className="flex items-center gap-1.5 py-1" style={{ borderBottom: i < 2 ? `1px solid ${draft.color_background}` : 'none' }}>
+                    <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: draft.color_primary }} />
+                    <p style={{ fontSize: '0.625rem', color: draft.color_text_secondary }}>{item}</p>
+                  </div>
+                ))}
+                <div style={{ marginTop: '0.625rem' }}>
+                  <button style={{
+                    backgroundColor: draft.color_primary,
+                    color: draft.color_card_bg,
+                    borderRadius: draft.button_radius,
+                    padding: '0.25rem 0.625rem',
+                    fontWeight: 500,
+                    fontSize: '0.625rem',
+                    border: 'none',
+                    cursor: 'default',
+                    fontFamily: draft.font_family,
+                  }}>
+                    View All
+                  </button>
+                </div>
+              </div>
+
+              {/* Table preview */}
+              <div style={cardStyle}>
+                <h3 style={{ fontSize: '0.6875rem', fontWeight: 600, color: draft.color_text_primary, marginBottom: '0.5rem' }}>Team Overview</h3>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.5625rem' }}>
+                  <thead>
+                    <tr style={{ borderBottom: `1px solid ${draft.color_background}` }}>
+                      {['Name', 'Role', 'Status'].map(h => (
+                        <th key={h} style={{ textAlign: 'left', color: draft.color_text_secondary, fontWeight: 600, padding: '0.25rem 0.25rem' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      ['Alice M.', 'Engineer', 'On Track'],
+                      ['Bob T.', 'Designer', 'Review Due'],
+                    ].map(([name, role, status]) => (
+                      <tr key={name} style={{ borderBottom: `1px solid ${draft.color_background}` }}>
+                        <td style={{ padding: '0.25rem', color: draft.color_text_primary, fontWeight: 500 }}>{name}</td>
+                        <td style={{ padding: '0.25rem', color: draft.color_text_secondary }}>{role}</td>
+                        <td style={{ padding: '0.25rem' }}>
+                          <span style={{
+                            backgroundColor: status === 'On Track' ? `${draft.color_success}22` : `${draft.color_warning}22`,
+                            color: status === 'On Track' ? draft.color_success : draft.color_warning,
+                            padding: '0.125rem 0.375rem',
+                            borderRadius: '999px',
+                            fontWeight: 600,
+                          }}>
+                            {status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Notification + link */}
+              <div style={{ ...cardStyle, backgroundColor: `${draft.color_info}12`, border: `1px solid ${draft.color_info}30` }}>
+                <p style={{ fontSize: '0.5625rem', color: draft.color_info, fontWeight: 600 }}>
+                  Reminder — 2 reviews are due this week.{' '}
+                  <span style={{ textDecoration: 'underline', cursor: 'default' }}>View reviews</span>
+                </p>
               </div>
             </div>
           </div>
-          <nav className="p-2 flex-1">
-            {['Dashboard', 'Reviews', 'Career', 'Training', 'Opal'].map((item, i) => (
-              <div
-                key={item}
-                className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs mb-0.5"
-                style={{
-                  backgroundColor: i === 0 ? draft.color_sidebar_active : 'transparent',
-                  color: i === 0 ? '#ffffff' : draft.color_sidebar_text,
-                }}
-              >
-                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: i === 0 ? '#fff' : 'rgba(255,255,255,0.3)' }} />
-                {item}
-              </div>
-            ))}
-          </nav>
         </div>
-
-        {/* Main */}
-        <div className="flex-1 p-4 overflow-hidden">
-          <div className="mb-4">
-            <h1 style={{ fontSize: '1.25rem', fontWeight: 700, color: draft.color_text_primary, lineHeight: 1.2 }}>Dashboard</h1>
-            <p style={{ fontSize: '0.8rem', color: draft.color_text_secondary, marginTop: '0.125rem' }}>Welcome back</p>
-          </div>
-
-          <div className="grid grid-cols-3 gap-3 mb-4">
-            {[
-              { label: 'Reviews Due', value: '3', color: draft.color_info },
-              { label: 'Team Members', value: '12', color: draft.color_success },
-              { label: 'Action Items', value: '5', color: draft.color_warning },
-            ].map(stat => (
-              <div
-                key={stat.label}
-                style={{
-                  backgroundColor: draft.color_card_bg,
-                  borderRadius: draft.card_radius,
-                  boxShadow: shadowMap[draft.card_shadow],
-                  border: borderMap[draft.card_border],
-                  padding: '0.75rem',
-                }}
-              >
-                <p style={{ fontSize: '0.65rem', color: draft.color_text_secondary }}>{stat.label}</p>
-                <p style={{ fontSize: '1.5rem', fontWeight: 700, color: stat.color }}>{stat.value}</p>
-              </div>
-            ))}
-          </div>
-
-          <div style={{
-            backgroundColor: draft.color_card_bg,
-            borderRadius: draft.card_radius,
-            boxShadow: shadowMap[draft.card_shadow],
-            border: borderMap[draft.card_border],
-            padding: '0.875rem',
-          }}>
-            <h3 style={{ fontSize: '0.8rem', fontWeight: 600, color: draft.color_text_primary, marginBottom: '0.5rem' }}>Recent Activity</h3>
-            {['Sarah completed her review', 'James updated career plan', 'New training available'].map(item => (
-              <div key={item} className="flex items-center gap-2 py-1.5 border-b last:border-0" style={{ borderColor: '#f1f5f9' }}>
-                <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: draft.color_primary }} />
-                <p style={{ fontSize: '0.72rem', color: draft.color_text_secondary }}>{item}</p>
-              </div>
-            ))}
-            <div className="mt-3">
-              <button style={{
-                backgroundColor: draft.color_primary, color: draft.color_card_bg,
-                borderRadius: draft.button_radius, padding: '0.3rem 0.75rem',
-                fontWeight: 500, fontSize: '0.72rem', border: 'none', cursor: 'default',
-              }}>View All</button>
-            </div>
-          </div>
-        </div>
-      </div>
+      )}
     </div>
   );
 }
 
-// ---------- Main component ----------
+// ---------- Main Component ----------
 
 export default function BrandingCentre() {
   const { profile } = useAuth();
   const { branding, refresh } = useBranding();
-  const [activeSection, setActiveSection] = useState<Section>('identity');
   const [draft, setDraft] = useState<BrandingSettings>(DEFAULT_BRANDING);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [hasUnsaved, setHasUnsaved] = useState(false);
+  const [previewVisible, setPreviewVisible] = useState(true);
 
   useEffect(() => {
     setDraft({ ...branding });
@@ -804,7 +1206,6 @@ export default function BrandingCentre() {
     setSaved(false);
   }, []);
 
-  // Immediately persist a single field (used by image uploads so the URL is saved without requiring Save Changes)
   const persistField = useCallback(async (key: keyof BrandingSettings, value: any) => {
     if (!profile) return;
     const patch = { [key]: value, updated_by: profile.id, updated_at: new Date().toISOString() };
@@ -824,39 +1225,9 @@ export default function BrandingCentre() {
   async function save() {
     if (!profile) return;
     setSaving(true);
+    const { id: _id, ...rest } = draft;
     const payload = {
-      platform_name: draft.platform_name,
-      tagline: draft.tagline,
-      subtitle: draft.subtitle,
-      logo_url: draft.logo_url,
-      favicon_url: draft.favicon_url,
-      color_primary: draft.color_primary,
-      color_primary_dark: draft.color_primary_dark,
-      color_secondary: draft.color_secondary,
-      color_accent: draft.color_accent,
-      color_background: draft.color_background,
-      color_card_bg: draft.color_card_bg,
-      color_text_primary: draft.color_text_primary,
-      color_text_secondary: draft.color_text_secondary,
-      color_success: draft.color_success,
-      color_warning: draft.color_warning,
-      color_error: draft.color_error,
-      color_info: draft.color_info,
-      color_sidebar_bg: draft.color_sidebar_bg,
-      color_sidebar_text: draft.color_sidebar_text,
-      color_sidebar_active: draft.color_sidebar_active,
-      font_family: draft.font_family,
-      font_size_base: draft.font_size_base,
-      button_radius: draft.button_radius,
-      button_style: draft.button_style,
-      card_radius: draft.card_radius,
-      card_shadow: draft.card_shadow,
-      card_border: draft.card_border,
-      card_spacing: draft.card_spacing,
-      opal_display_name: draft.opal_display_name,
-      opal_welcome_message: draft.opal_welcome_message,
-      opal_color_theme: draft.opal_color_theme,
-      opal_avatar_url: draft.opal_avatar_url,
+      ...rest,
       updated_by: profile.id,
       updated_at: new Date().toISOString(),
     };
@@ -874,28 +1245,28 @@ export default function BrandingCentre() {
     setTimeout(() => setSaved(false), 3000);
   }
 
-  const activeIndex = SECTIONS.findIndex(s => s.id === activeSection);
-
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-900">Branding Centre</h2>
-          <p className="text-slate-500 text-sm mt-0.5">Centralise platform branding, colours, typography and Opal's identity.</p>
+          <h2 className="text-2xl font-bold text-slate-900">Branding Centre</h2>
+          <p className="text-slate-500 text-sm mt-1">Customise platform identity, colours, typography and Opal's appearance.</p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           {hasUnsaved && (
             <button
               onClick={resetToDefaults}
-              className="flex items-center gap-1.5 px-3 py-2 text-sm text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+              className="flex items-center gap-1.5 px-3.5 py-2.5 text-sm text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors"
             >
-              <RefreshCw className="w-3.5 h-3.5" /> Discard
+              <RefreshCw className="w-3.5 h-3.5" />
+              Discard
             </button>
           )}
           <button
             onClick={save}
             disabled={saving || !hasUnsaved}
-            className="flex items-center gap-1.5 px-4 py-2 bg-cyan-600 text-white rounded-lg text-sm font-medium hover:bg-cyan-700 disabled:opacity-50 transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 bg-cyan-600 text-white rounded-xl text-sm font-medium hover:bg-cyan-700 disabled:opacity-50 transition-colors shadow-sm"
           >
             {saving ? (
               <><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Saving…</>
@@ -909,47 +1280,32 @@ export default function BrandingCentre() {
       </div>
 
       {hasUnsaved && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-center gap-2 text-sm text-amber-800">
+        <div className="flex items-center gap-2.5 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
           <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-          You have unsaved changes. Save to apply them across the platform.
+          Unsaved changes — save to apply them across the platform.
         </div>
       )}
 
-      <div className="flex gap-6">
-        {/* Section nav */}
-        <aside className="w-44 flex-shrink-0">
-          <nav className="space-y-0.5">
-            {SECTIONS.map(s => {
-              const Icon = s.icon;
-              return (
-                <button
-                  key={s.id}
-                  onClick={() => setActiveSection(s.id)}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left ${
-                    activeSection === s.id
-                      ? 'bg-cyan-50 text-cyan-700'
-                      : 'text-slate-600 hover:bg-slate-100'
-                  }`}
-                >
-                  <Icon className="w-4 h-4 flex-shrink-0" />
-                  {s.label}
-                </button>
-              );
-            })}
-          </nav>
-        </aside>
+      {/* Two-column layout */}
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_380px] gap-6 items-start">
+        {/* Settings column */}
+        <div className="space-y-5 min-w-0">
+          <IdentitySection draft={draft} update={update} persistField={persistField} />
+          <ColoursSection draft={draft} update={update} />
+          <TypographySection draft={draft} update={update} />
+          <ButtonsSection draft={draft} update={update} />
+          <CardsSection draft={draft} update={update} />
+          <OpalSection draft={draft} update={update} persistField={persistField} />
+        </div>
 
-        {/* Panel */}
-        <div className="flex-1 min-w-0 bg-white rounded-2xl border border-slate-200 p-6">
-          {activeSection === 'identity'   && <IdentityPanel   draft={draft} update={update} persistField={persistField} />}
-          {activeSection === 'colours'    && <ColoursPanel    draft={draft} update={update} />}
-          {activeSection === 'typography' && <TypographyPanel draft={draft} update={update} />}
-          {activeSection === 'buttons'    && <ButtonsPanel    draft={draft} update={update} />}
-          {activeSection === 'cards'      && <CardsPanel      draft={draft} update={update} />}
-          {activeSection === 'opal'       && <OpalPanel       draft={draft} update={update} persistField={persistField} />}
-          {activeSection === 'preview'    && <LivePreview     draft={draft} />}
+        {/* Sticky preview column */}
+        <div className="min-w-0">
+          <LivePreview draft={draft} visible={previewVisible} onToggle={() => setPreviewVisible(v => !v)} />
         </div>
       </div>
     </div>
   );
 }
+
+
+export default BrandingCentre
