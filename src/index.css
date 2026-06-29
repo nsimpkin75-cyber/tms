@@ -14,12 +14,34 @@
     --bg-light: #f7f9fc;
     --text-dark: #1e293b;
     --text-light: #64748b;
+
+    /* Brand variables — overridden at runtime by BrandingContext */
+    --brand-primary: #0891b2;
+    --brand-primary-dark: #0e7490;
+    --brand-secondary: #64748b;
+    --brand-accent: #06b6d4;
+    --brand-bg: #f1f5f9;
+    --brand-card-bg: #ffffff;
+    --brand-text-primary: #0f172a;
+    --brand-text-secondary: #64748b;
+    --brand-success: #16a34a;
+    --brand-warning: #d97706;
+    --brand-error: #dc2626;
+    --brand-info: #2563eb;
+    --brand-sidebar-bg: #1e293b;
+    --brand-sidebar-text: #cbd5e1;
+    --brand-sidebar-active: #0891b2;
+    --brand-font: 'Inter';
+    --brand-font-size: 16px;
+    --brand-btn-radius: 0.5rem;
+    --brand-card-radius: 0.75rem;
   }
 
   body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background-color: var(--bg-light);
-    color: var(--text-dark);
+    font-family: var(--brand-font, 'Inter'), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background-color: var(--brand-bg, #f1f5f9);
+    color: var(--brand-text-primary, #0f172a);
+    font-size: var(--brand-font-size, 16px);
   }
 
   .dyslexic-font {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Users, GraduationCap, Award, Briefcase, FileText, History, Target, CheckCircle, Map, Bot, ClipboardList, Globe, Grid3x3, Menu, X, Building2, ShieldCheck, RefreshCw, BarChart2, DatabaseBackup, Gavel, MessageSquare, PenLine } from 'lucide-react';
+import { Users, GraduationCap, Award, Briefcase, FileText, History, Target, CheckCircle, Map, Bot, ClipboardList, Globe, Grid3x3, Menu, X, Building2, ShieldCheck, RefreshCw, BarChart2, DatabaseBackup, Gavel, MessageSquare, PenLine, Paintbrush } from 'lucide-react';
 import UserManagement from '../components/admin/UserManagement';
 import TrainingManagement from '../components/admin/TrainingManagement';
 import CareerPlansManagement from '../components/admin/CareerPlansManagement';
@@ -21,8 +21,9 @@ import BackfillOneToOne from '../components/admin/BackfillOneToOne';
 import SeraCareerFeedback from '../components/admin/SeraCareerFeedback';
 import RoleProfileRecommendations from '../components/admin/RoleProfileRecommendations';
 import SkillsMatrixAdmin from '../components/skills-matrix/SkillsMatrixAdmin';
+import BrandingCentre from '../components/admin/BrandingCentre';
 
-type TabType = 'users' | 'org-settings' | 'training' | 'plans' | 'jobs' | 'reports' | 'history' | 'criteria' | 'roadmap' | 'marti' | 'review-templates' | 'competencies' | 'language' | 'sm-admin' | 'moderation-workflow' | 'exec-moderators' | 'review-cycles' | 'review-report' | 'backfill-oto' | 'sera-career-feedback' | 'role-recommendations';
+type TabType = 'users' | 'org-settings' | 'training' | 'plans' | 'jobs' | 'reports' | 'history' | 'criteria' | 'roadmap' | 'marti' | 'review-templates' | 'competencies' | 'language' | 'sm-admin' | 'moderation-workflow' | 'exec-moderators' | 'review-cycles' | 'review-report' | 'backfill-oto' | 'sera-career-feedback' | 'role-recommendations' | 'branding';
 
 interface NavSection {
   title: string;
@@ -50,6 +51,7 @@ export default function Admin() {
       items: [
         { id: 'users' as TabType, label: 'Users', icon: Users },
         { id: 'org-settings' as TabType, label: 'Organization Settings', icon: Building2 },
+        { id: 'branding' as TabType, label: 'Branding Centre', icon: Paintbrush },
       ],
     },
     {
@@ -186,6 +188,7 @@ export default function Admin() {
           {activeTab === 'backfill-oto' && <BackfillOneToOne />}
           {activeTab === 'role-recommendations' && <RoleProfileRecommendations />}
           {activeTab === 'sm-admin' && <SkillsMatrixAdmin />}
+          {activeTab === 'branding' && <BrandingCentre />}
         </div>
       </main>
     </div>

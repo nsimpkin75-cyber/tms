@@ -15,6 +15,7 @@ import {
   Users,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useBranding } from '../contexts/BrandingContext';
 
 interface SidebarProps {
   currentPath: string;
@@ -25,6 +26,7 @@ export function Sidebar({ currentPath, onNavigate }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { profile, effectiveProfile, isViewingAs, signOut } = useAuth();
+  const { branding } = useBranding();
 
   const navItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
@@ -63,12 +65,16 @@ export function Sidebar({ currentPath, onNavigate }: SidebarProps) {
         <div className="flex items-center gap-3">
           {!collapsed && (
             <>
-              <div className="w-10 h-10 bg-cyan-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-                EV
-              </div>
+              {branding.logo_url ? (
+                <img src={branding.logo_url} alt={branding.platform_name} className="w-10 h-10 rounded-lg object-contain" />
+              ) : (
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0" style={{ backgroundColor: 'var(--brand-primary, #0891b2)' }}>
+                  {branding.platform_name.substring(0, 2).toUpperCase()}
+                </div>
+              )}
               <div className="flex-1 min-w-0">
-                <h2 className="text-white font-semibold truncate">Evolo</h2>
-                <p className="text-slate-400 text-xs truncate">The People Operating System</p>
+                <h2 className="text-white font-semibold truncate">{branding.platform_name}</h2>
+                <p className="text-slate-400 text-xs truncate">{branding.tagline}</p>
               </div>
             </>
           )}
@@ -191,7 +197,8 @@ export function Sidebar({ currentPath, onNavigate }: SidebarProps) {
           collapsed ? 'lg:w-20' : 'lg:w-64'
         } ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-        } fixed lg:static inset-y-0 left-0 z-40 bg-slate-800 transition-all duration-300`}
+        } fixed lg:static inset-y-0 left-0 z-40 transition-all duration-300`}
+        style={{ backgroundColor: 'var(--brand-sidebar-bg, #1e293b)' }}
       >
         {sidebarContent}
       </aside>

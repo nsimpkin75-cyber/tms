@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { AccessibilityProvider } from './contexts/AccessibilityContext';
 import { LanguageProvider } from './contexts/LanguageContext';
+import { BrandingProvider } from './contexts/BrandingContext';
 import { Sidebar } from './components/Sidebar';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
@@ -129,11 +130,13 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
-      <LanguageProvider>
-        <AccessibilityProvider>
-          <AppContent />
-        </AccessibilityProvider>
-      </LanguageProvider>
+      <BrandingProvider>
+        <LanguageProvider>
+          <AccessibilityProvider>
+            <AppContent />
+          </AccessibilityProvider>
+        </LanguageProvider>
+      </BrandingProvider>
     </AuthProvider>
   );
 }
