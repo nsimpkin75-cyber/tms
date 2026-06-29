@@ -1,1039 +1,738 @@
 import { useState, useEffect } from 'react';
-import { Plus, Target, Users, TrendingUp, Calendar, AlertCircle, CheckCircle2, X, ArrowRight, ArrowLeft, Send, FileText, Award, Clock, CheckCircle, XCircle, CreditCard as Edit, Trash2, Eye } from 'lucide-react';
+import { Map, Plus, X, ChevronRight, Loader2, Building2, UserCheck, Calendar, Clock, MessageSquare, ClipboardList, Sparkles, AlertCircle, CreditCard as Edit2, Save, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { format } from 'date-fns';
+import DepartmentPlanEditor from '../components/strategy/DepartmentPlanEditor';
+import StrategyCollaboration from '../components/strategy/StrategyCollaboration';
 
+// ── Types ──────────────────────────────────────────────────────────────────
 interface Strategy {
   id: string;
   title: string;
   description: string | null;
-  start_date: string;
-  end_date: string;
+  strategic_theme: string | null;
+  success_measures: string | null;
+  supporting_notes: string | null;
+  target_date: string | null;
+  start_date: string | null;
+  end_date: string | null;
   status: 'draft' | 'active' | 'completed' | 'archived';
   creator_id: string;
   created_at: string;
   creator?: { full_name: string };
 }
 
-interface FocusArea {
+interface DeptAssignment {
   id: string;
   strategy_id: string;
-  title: string;
-  description: string | null;
-  sort_order: number;
+  department_name: string;
+  strategic_lead_id: string | null;
+  lead?: { full_name: string; role: string };
 }
 
-interface Milestone {
+interface DeptPlan {
   id: string;
-  focus_area_id: string;
+  strategy_id: string;
+  assignment_id: string | null;
+  department_name: string;
+  strategic_lead_id: string;
   title: string;
-  description: string | null;
-  target_date: string | null;
-  status: 'not_started' | 'in_progress' | 'completed' | 'blocked';
+  overview: string | null;
+  status: 'draft' | 'submitted' | 'in_review' | 'amendments_requested' | 'resubmitted' | 'approved' | 'active';
+  version: number;
+  submitted_at: string | null;
+  approved_at: string | null;
+  approved_by_id: string | null;
+  created_at: string;
+  lead?: { full_name: string };
 }
 
-interface StrategyLead {
+interface AuditEntry {
   id: string;
-  focus_area_id: string;
-  user_id: string;
-  user?: { full_name: string; role: string };
+  action: string;
+  old_status: string | null;
+  new_status: string | null;
+  comment: string | null;
+  created_at: string;
+  actor?: { full_name: string };
 }
 
-interface DepartmentStrategy {
-  id: string;
-  parent_strategy_id: string;
-  focus_area_id: string;
-  department: string;
-  title: string;
-  description: string | null;
-  status: 'draft' | 'pending_approval' | 'active' | 'rejected' | 'archived';
-  feedback: string | null;
-  creator?: { full_name: string };
-}
+type RightTab = 'overview' | 'plans' | 'collaboration' | 'audit';
 
+const STATUS_CFG: Record<string, { label: string; dot: string; badge: string }> = {
+  draft:     { label: 'Draft',     dot: 'bg-slate-400', badge: 'bg-slate-100 text-slate-600' },
+  active:    { label: 'Active',    dot: 'bg-green-500', badge: 'bg-green-100 text-green-700' },
+  completed: { label: 'Completed', dot: 'bg-blue-400',  badge: 'bg-blue-100 text-blue-700' },
+  archived:  { label: 'Archived',  dot: 'bg-slate-300', badge: 'bg-slate-50 text-slate-400' },
+};
+
+const PLAN_STATUS_CFG: Record<string, { label: string; colour: string }> = {
+  draft:                { label: 'Draft',             colour: 'bg-slate-100 text-slate-600' },
+  submitted:            { label: 'Submitted',         colour: 'bg-blue-100 text-blue-700' },
+  in_review:            { label: 'In Review',         colour: 'bg-amber-100 text-amber-700' },
+  amendments_requested: { label: 'Amendments Needed', colour: 'bg-rose-100 text-rose-700' },
+  resubmitted:          { label: 'Resubmitted',       colour: 'bg-purple-100 text-purple-700' },
+  approved:             { label: 'Approved',          colour: 'bg-green-100 text-green-700' },
+  active:               { label: 'Active',            colour: 'bg-teal-100 text-teal-700' },
+};
+
+const emptyForm = {
+  title: '', strategic_theme: '', description: '',
+  success_measures: '', target_date: '', supporting_notes: '',
+  start_date: '', end_date: '', status: 'draft' as Strategy['status'],
+};
+
+// ── Component ─────────────────────────────────────────────────────────────
 export default function Strategies() {
-  const { profile, user, effectiveProfile, isViewingAs, guardViewAs } = useAuth();
-  const activeProfile = effectiveProfile || profile;
+  const { profile } = useAuth();
+  const isAdmin   = profile?.role === 'admin';
+  const isExec    = profile?.role === 'leadership' || isAdmin;
+
   const [strategies, setStrategies] = useState<Strategy[]>([]);
-  const [selectedStrategy, setSelectedStrategy] = useState<Strategy | null>(null);
-  const [focusAreas, setFocusAreas] = useState<FocusArea[]>([]);
-  const [milestones, setMilestones] = useState<Milestone[]>([]);
-  const [leads, setLeads] = useState<StrategyLead[]>([]);
-  const [departmentStrategies, setDepartmentStrategies] = useState<DepartmentStrategy[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editingStrategy, setEditingStrategy] = useState<Strategy | null>(null);
-  const [createStep, setCreateStep] = useState(1);
-  const [availableUsers, setAvailableUsers] = useState<Array<{ id: string; full_name: string; role: string }>>([]);
+  const [selected, setSelected]     = useState<Strategy | null>(null);
+  const [assignments, setAssignments] = useState<DeptAssignment[]>([]);
+  const [plans, setPlans]           = useState<DeptPlan[]>([]);
+  const [audit, setAudit]           = useState<AuditEntry[]>([]);
+  const [loading, setLoading]       = useState(true);
+  const [rightTab, setRightTab]     = useState<RightTab>('overview');
+  const [activePlan, setActivePlan] = useState<DeptPlan | null>(null);
 
-  const [strategyForm, setStrategyForm] = useState({
-    title: '',
-    description: '',
-    start_date: '',
-    end_date: '',
-    status: 'draft' as const
-  });
+  // Modals
+  const [showCreate, setShowCreate]         = useState(false);
+  const [editingStrategy, setEditing]       = useState<Strategy | null>(null);
+  const [showAddDept, setShowAddDept]       = useState(false);
+  const [showCreatePlan, setShowCreatePlan] = useState<DeptAssignment | null>(null);
+  const [availableUsers, setAvailableUsers] = useState<{ id: string; full_name: string; role: string }[]>([]);
 
-  const [focusAreaForms, setFocusAreaForms] = useState<Array<{
-    title: string;
-    description: string;
-    milestones: Array<{ title: string; description: string; target_date: string }>;
-  }>>([{ title: '', description: '', milestones: [{ title: '', description: '', target_date: '' }] }]);
+  const [form, setForm]         = useState(emptyForm);
+  const [deptForm, setDeptForm] = useState({ department_name: '', strategic_lead_id: '' });
+  const [planForm, setPlanForm] = useState({ title: '', overview: '' });
+  const [saving, setSaving]     = useState(false);
 
-  const [leadAssignments, setLeadAssignments] = useState<Record<number, string[]>>({});
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
+  useEffect(() => { loadStrategies(); loadUsers(); }, []);
   useEffect(() => {
-    if (user) {
-      fetchStrategies();
-      fetchAvailableUsers();
+    if (selected) {
+      loadAssignments(selected.id);
+      loadPlans(selected.id);
+      loadAudit(selected.id);
     }
-  }, [user]);
+  }, [selected]);
 
-  useEffect(() => {
-    if (selectedStrategy) {
-      fetchStrategyDetails(selectedStrategy.id);
-    }
-  }, [selectedStrategy]);
-
-  async function fetchStrategies() {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('strategies')
-        .select(`
-          *,
-          creator:profiles!strategies_creator_id_fkey(full_name)
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setStrategies(data || []);
-    } catch (error) {
-      console.error('Error fetching strategies:', error);
-    } finally {
-      setLoading(false);
-    }
+  async function loadStrategies() {
+    setLoading(true);
+    const { data } = await supabase
+      .from('strategies')
+      .select('*, creator:creator_id(full_name)')
+      .order('created_at', { ascending: false });
+    setStrategies((data ?? []) as Strategy[]);
+    setLoading(false);
   }
 
-  async function fetchStrategyDetails(strategyId: string) {
-    try {
-      const [focusAreasRes, leadsRes, deptStrategiesRes] = await Promise.all([
-        supabase
-          .from('strategy_focus_areas')
-          .select('*')
-          .eq('strategy_id', strategyId)
-          .order('sort_order'),
-        supabase
-          .from('strategy_leads')
-          .select(`
-            *,
-            user:profiles!strategy_leads_user_id_fkey(full_name, role)
-          `),
-        supabase
-          .from('department_strategies')
-          .select(`
-            *,
-            creator:profiles!department_strategies_creator_id_fkey(full_name)
-          `)
-          .eq('parent_strategy_id', strategyId)
-      ]);
-
-      if (focusAreasRes.data) {
-        setFocusAreas(focusAreasRes.data);
-        const focusAreaIds = focusAreasRes.data.map(fa => fa.id);
-
-        if (focusAreaIds.length > 0) {
-          const { data: milestonesData } = await supabase
-            .from('strategy_milestones')
-            .select('*')
-            .in('focus_area_id', focusAreaIds);
-          setMilestones(milestonesData || []);
-        }
-      }
-
-      setLeads(leadsRes.data || []);
-      setDepartmentStrategies(deptStrategiesRes.data || []);
-    } catch (error) {
-      console.error('Error fetching strategy details:', error);
-    }
+  async function loadUsers() {
+    const { data } = await supabase.from('profiles').select('id, full_name, role').order('full_name');
+    setAvailableUsers(data ?? []);
   }
 
-  async function fetchAvailableUsers() {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, full_name, role')
-        .eq('active', true)
-        .order('full_name');
-
-      if (error) throw error;
-      setAvailableUsers(data || []);
-    } catch (error) {
-      console.error('Error fetching users:', error);
-    }
+  async function loadAssignments(strategyId: string) {
+    const { data } = await supabase
+      .from('strategy_department_assignments')
+      .select('*, lead:strategic_lead_id(full_name, role)')
+      .eq('strategy_id', strategyId)
+      .order('created_at');
+    setAssignments((data ?? []) as DeptAssignment[]);
   }
 
-  function validateStep1() {
-    const newErrors: Record<string, string> = {};
-    if (!strategyForm.title.trim()) newErrors.title = 'Title is required';
-    if (!strategyForm.start_date) newErrors.start_date = 'Start date is required';
-    if (!strategyForm.end_date) newErrors.end_date = 'End date is required';
-    if (strategyForm.start_date && strategyForm.end_date && strategyForm.end_date < strategyForm.start_date) {
-      newErrors.end_date = 'End date cannot be before start date';
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  async function loadPlans(strategyId: string) {
+    const { data } = await supabase
+      .from('department_strategic_plans')
+      .select('*, lead:strategic_lead_id(full_name)')
+      .eq('strategy_id', strategyId)
+      .order('created_at');
+    setPlans((data ?? []) as DeptPlan[]);
   }
 
-  function validateStep2() {
-    const newErrors: Record<string, string> = {};
-    if (focusAreaForms.length === 0 || !focusAreaForms[0].title.trim()) {
-      newErrors.focus_areas = 'At least one focus area is required';
-    }
-    focusAreaForms.forEach((fa, idx) => {
-      if (!fa.title.trim()) {
-        newErrors[`focus_area_${idx}`] = 'Focus area title is required';
-      }
-      if (fa.milestones.length === 0 || !fa.milestones[0].title.trim()) {
-        newErrors[`focus_area_${idx}_milestone`] = 'At least one milestone is required';
-      }
-    });
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  async function loadAudit(strategyId: string) {
+    const { data } = await supabase
+      .from('strategy_audit_log')
+      .select('*, actor:actor_id(full_name)')
+      .eq('strategy_id', strategyId)
+      .order('created_at', { ascending: false })
+      .limit(50);
+    setAudit((data ?? []) as AuditEntry[]);
   }
 
-  function addFocusArea() {
-    setFocusAreaForms([...focusAreaForms, {
-      title: '',
-      description: '',
-      milestones: [{ title: '', description: '', target_date: '' }]
+  function selectStrategy(s: Strategy) {
+    setSelected(s);
+    setActivePlan(null);
+    setRightTab('overview');
+  }
+
+  async function saveStrategy() {
+    if (!form.title.trim() || !profile) return;
+    setSaving(true);
+    const payload = {
+      title: form.title.trim(),
+      strategic_theme: form.strategic_theme || null,
+      description: form.description || null,
+      success_measures: form.success_measures || null,
+      supporting_notes: form.supporting_notes || null,
+      target_date: form.target_date || null,
+      start_date: form.start_date || null,
+      end_date: form.end_date || null,
+      status: form.status,
+    };
+    if (editingStrategy) {
+      await supabase.from('strategies').update(payload).eq('id', editingStrategy.id);
+    } else {
+      await supabase.from('strategies').insert([{ ...payload, creator_id: profile.id }]);
+    }
+    setSaving(false);
+    setShowCreate(false);
+    setEditing(null);
+    setForm(emptyForm);
+    loadStrategies();
+  }
+
+  async function addDeptAssignment() {
+    if (!deptForm.department_name.trim() || !selected || !profile) return;
+    setSaving(true);
+    const { data: inserted } = await supabase
+      .from('strategy_department_assignments')
+      .insert([{
+        strategy_id: selected.id,
+        department_name: deptForm.department_name,
+        strategic_lead_id: deptForm.strategic_lead_id || null,
+        assigned_by_id: profile.id,
+      }])
+      .select()
+      .maybeSingle();
+
+    if (deptForm.strategic_lead_id && inserted) {
+      await supabase.from('strategy_notifications').insert([{
+        strategy_id: selected.id,
+        user_id: deptForm.strategic_lead_id,
+        message: `You have been assigned as Strategic Lead for ${deptForm.department_name} on "${selected.title}"`,
+      }]).maybeSingle().catch(() => {});
+    }
+    setSaving(false);
+    setShowAddDept(false);
+    setDeptForm({ department_name: '', strategic_lead_id: '' });
+    loadAssignments(selected.id);
+  }
+
+  async function removeAssignment(id: string) {
+    await supabase.from('strategy_department_assignments').delete().eq('id', id);
+    loadAssignments(selected!.id);
+  }
+
+  async function createPlan(assignment: DeptAssignment) {
+    if (!planForm.title.trim() || !profile) return;
+    setSaving(true);
+    await supabase.from('department_strategic_plans').insert([{
+      strategy_id: assignment.strategy_id,
+      assignment_id: assignment.id,
+      department_name: assignment.department_name,
+      strategic_lead_id: assignment.strategic_lead_id ?? profile.id,
+      title: planForm.title.trim(),
+      overview: planForm.overview || null,
     }]);
+    await supabase.from('strategy_audit_log').insert([{
+      strategy_id: assignment.strategy_id,
+      actor_id: profile.id,
+      action: 'Department Strategic Plan created',
+      new_status: 'draft',
+    }]);
+    setSaving(false);
+    setShowCreatePlan(null);
+    setPlanForm({ title: '', overview: '' });
+    loadPlans(assignment.strategy_id);
+    setRightTab('plans');
   }
 
-  function removeFocusArea(index: number) {
-    const newForms = focusAreaForms.filter((_, i) => i !== index);
-    setFocusAreaForms(newForms.length > 0 ? newForms : [{ title: '', description: '', milestones: [{ title: '', description: '', target_date: '' }] }]);
-  }
-
-  function addMilestone(focusIndex: number) {
-    const newForms = [...focusAreaForms];
-    newForms[focusIndex].milestones.push({ title: '', description: '', target_date: '' });
-    setFocusAreaForms(newForms);
-  }
-
-  function removeMilestone(focusIndex: number, milestoneIndex: number) {
-    const newForms = [...focusAreaForms];
-    newForms[focusIndex].milestones = newForms[focusIndex].milestones.filter((_, i) => i !== milestoneIndex);
-    if (newForms[focusIndex].milestones.length === 0) {
-      newForms[focusIndex].milestones = [{ title: '', description: '', target_date: '' }];
-    }
-    setFocusAreaForms(newForms);
-  }
-
-  function updateFocusArea(index: number, field: string, value: string) {
-    const newForms = [...focusAreaForms];
-    (newForms[index] as any)[field] = value;
-    setFocusAreaForms(newForms);
-  }
-
-  function updateMilestone(focusIndex: number, milestoneIndex: number, field: string, value: string) {
-    const newForms = [...focusAreaForms];
-    (newForms[focusIndex].milestones[milestoneIndex] as any)[field] = value;
-    setFocusAreaForms(newForms);
-  }
-
-  function toggleLeadAssignment(focusIndex: number, userId: string) {
-    const current = leadAssignments[focusIndex] || [];
-    setLeadAssignments({
-      ...leadAssignments,
-      [focusIndex]: current.includes(userId)
-        ? current.filter(id => id !== userId)
-        : [...current, userId]
+  function openEditStrategy(s: Strategy) {
+    setEditing(s);
+    setForm({
+      title: s.title,
+      strategic_theme: s.strategic_theme ?? '',
+      description: s.description ?? '',
+      success_measures: s.success_measures ?? '',
+      target_date: s.target_date ?? '',
+      supporting_notes: s.supporting_notes ?? '',
+      start_date: s.start_date ?? '',
+      end_date: s.end_date ?? '',
+      status: s.status,
     });
+    setShowCreate(true);
   }
 
-  async function handleCreateStrategy() {
-    if (guardViewAs()) return;
-    if (createStep === 1 && !validateStep1()) return;
-    if (createStep === 2 && !validateStep2()) return;
-
-    if (createStep < 3) {
-      setCreateStep(createStep + 1);
-      return;
-    }
-
-    try {
-      const { data: strategy, error: strategyError } = await supabase
-        .from('strategies')
-        .insert([{
-          title: strategyForm.title,
-          description: strategyForm.description,
-          start_date: strategyForm.start_date,
-          end_date: strategyForm.end_date,
-          status: strategyForm.status,
-          creator_id: user?.id
-        }])
-        .select()
-        .single();
-
-      if (strategyError) throw strategyError;
-
-      for (let i = 0; i < focusAreaForms.length; i++) {
-        const focusForm = focusAreaForms[i];
-        const { data: focusArea, error: focusError } = await supabase
-          .from('strategy_focus_areas')
-          .insert([{
-            strategy_id: strategy.id,
-            title: focusForm.title,
-            description: focusForm.description,
-            sort_order: i
-          }])
-          .select()
-          .single();
-
-        if (focusError) throw focusError;
-
-        for (const milestone of focusForm.milestones) {
-          if (milestone.title.trim()) {
-            await supabase.from('strategy_milestones').insert([{
-              focus_area_id: focusArea.id,
-              title: milestone.title,
-              description: milestone.description,
-              target_date: milestone.target_date || null,
-              status: 'not_started'
-            }]);
-          }
-        }
-
-        const assignedLeads = leadAssignments[i] || [];
-        if (assignedLeads.length > 0 && strategyForm.status === 'active') {
-          for (const userId of assignedLeads) {
-            await supabase.from('strategy_leads').insert([{
-              focus_area_id: focusArea.id,
-              user_id: userId,
-              assigned_by: user?.id
-            }]);
-
-            await supabase.from('strategy_notifications').insert([{
-              strategy_id: strategy.id,
-              user_id: userId,
-              notification_type: 'strategy_assigned',
-              message: `You have been assigned as a lead for "${focusForm.title}" in strategy "${strategyForm.title}"`
-            }]);
-          }
-        }
-      }
-
-      setShowCreateModal(false);
-      resetForm();
-      fetchStrategies();
-    } catch (error) {
-      console.error('Error creating strategy:', error);
-      alert('Failed to create strategy. Please try again.');
-    }
+  // Dept plan editor full view
+  if (activePlan && selected) {
+    return (
+      <div className="h-full flex flex-col">
+        <DepartmentPlanEditor
+          plan={activePlan}
+          strategyTitle={selected.title}
+          onBack={() => setActivePlan(null)}
+          onPlanUpdated={() => loadPlans(selected.id)}
+          isExec={isExec}
+        />
+      </div>
+    );
   }
-
-  function resetForm() {
-    setStrategyForm({ title: '', description: '', start_date: '', end_date: '', status: 'draft' });
-    setFocusAreaForms([{ title: '', description: '', milestones: [{ title: '', description: '', target_date: '' }] }]);
-    setLeadAssignments({});
-    setCreateStep(1);
-    setErrors({});
-    setEditingStrategy(null);
-  }
-
-  function openEditModal(strategy: Strategy) {
-    setEditingStrategy(strategy);
-    setStrategyForm({
-      title: strategy.title,
-      description: strategy.description || '',
-      start_date: strategy.start_date,
-      end_date: strategy.end_date,
-      status: strategy.status
-    });
-    setShowEditModal(true);
-  }
-
-  async function handleUpdateStrategy() {
-    if (!editingStrategy || guardViewAs()) return;
-
-    const newErrors: Record<string, string> = {};
-    if (!strategyForm.title.trim()) newErrors.title = 'Title is required';
-    if (!strategyForm.start_date) newErrors.start_date = 'Start date is required';
-    if (!strategyForm.end_date) newErrors.end_date = 'End date is required';
-    if (strategyForm.start_date && strategyForm.end_date && strategyForm.end_date < strategyForm.start_date) {
-      newErrors.end_date = 'End date cannot be before start date';
-    }
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from('strategies')
-        .update({
-          title: strategyForm.title,
-          description: strategyForm.description,
-          start_date: strategyForm.start_date,
-          end_date: strategyForm.end_date,
-          status: strategyForm.status,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', editingStrategy.id);
-
-      if (error) throw error;
-
-      if (strategyForm.status === 'active' && editingStrategy.status !== 'active') {
-        const { data: strategyLeads } = await supabase
-          .from('strategy_leads')
-          .select('user_id, focus_area_id')
-          .in('focus_area_id', focusAreas.map(fa => fa.id));
-
-        if (strategyLeads && strategyLeads.length > 0) {
-          for (const lead of strategyLeads) {
-            await supabase.from('strategy_notifications').insert([{
-              strategy_id: editingStrategy.id,
-              user_id: lead.user_id,
-              notification_type: 'status_changed',
-              message: `Strategy "${strategyForm.title}" is now active`
-            }]);
-          }
-        }
-      }
-
-      setShowEditModal(false);
-      resetForm();
-      await fetchStrategies();
-
-      const updatedStrategy = strategies.find(s => s.id === editingStrategy.id);
-      if (updatedStrategy) {
-        setSelectedStrategy({ ...updatedStrategy, ...strategyForm });
-      }
-    } catch (error) {
-      console.error('Error updating strategy:', error);
-      alert('Failed to update strategy. Please try again.');
-    }
-  }
-
-  function getStatusColor(status: string) {
-    switch (status) {
-      case 'draft': return 'bg-gray-100 text-gray-800';
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'completed': return 'bg-blue-100 text-blue-800';
-      case 'archived': return 'bg-slate-100 text-slate-600';
-      case 'pending_approval': return 'bg-yellow-100 text-yellow-800';
-      case 'rejected': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  }
-
-  function getMilestoneStatusIcon(status: string) {
-    switch (status) {
-      case 'completed': return <CheckCircle className="w-5 h-5 text-green-600" />;
-      case 'in_progress': return <Clock className="w-5 h-5 text-blue-600" />;
-      case 'blocked': return <XCircle className="w-5 h-5 text-red-600" />;
-      default: return <AlertCircle className="w-5 h-5 text-gray-400" />;
-    }
-  }
-
-  const isAdmin = (activeProfile?.role === 'admin' || activeProfile?.role === 'leadership') && !isViewingAs;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Strategies</h1>
-          <p className="text-slate-600 mt-2">
-            Define and manage organizational and department-level strategies
-          </p>
-        </div>
-        {isAdmin && (
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="btn-primary flex items-center gap-2 self-start sm:self-center"
-          >
-            <Plus className="w-5 h-5" />
-            Add Strategy
-          </button>
-        )}
-      </div>
-
-      {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-        </div>
-      ) : strategies.length === 0 ? (
-        <div className="card text-center py-12">
-          <Target className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No Strategies Yet</h3>
-          <p className="text-gray-600 mb-4">
-            Create your first strategy to align organizational goals
-          </p>
-          {isAdmin && (
-            <button onClick={() => setShowCreateModal(true)} className="btn-primary inline-flex items-center gap-2">
-              <Plus className="w-5 h-5" />
-              Create Strategy
+    <div className="h-full flex flex-col overflow-hidden">
+      {/* Page header */}
+      <div className="flex-shrink-0 px-6 py-4 border-b border-slate-200 bg-white">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-cyan-50 rounded-lg">
+              <Map className="w-5 h-5 text-cyan-600" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-slate-900">Strategic Mapping</h1>
+              <p className="text-sm text-slate-500">Translate business strategy into departmental action</p>
+            </div>
+          </div>
+          {isExec && (
+            <button
+              onClick={() => { setForm(emptyForm); setEditing(null); setShowCreate(true); }}
+              className="flex items-center gap-2 px-4 py-2 bg-cyan-600 text-white rounded-xl text-sm font-medium hover:bg-cyan-700 transition-colors"
+            >
+              <Plus className="w-4 h-4" /> New Business Strategy
             </button>
           )}
         </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-1 space-y-4">
-            <h2 className="text-xl font-semibold text-slate-900">All Strategies</h2>
-            {strategies.map((strategy) => (
-              <div
-                key={strategy.id}
-                onClick={() => setSelectedStrategy(strategy)}
-                className={`card cursor-pointer transition-all ${
-                  selectedStrategy?.id === strategy.id
-                    ? 'ring-2 ring-blue-500 bg-blue-50'
-                    : 'hover:shadow-md'
-                }`}
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <h3 className="font-semibold text-slate-900">{strategy.title}</h3>
-                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(strategy.status)}`}>
-                    {strategy.status}
-                  </span>
-                </div>
-                <p className="text-sm text-slate-600 mb-3 line-clamp-2">{strategy.description}</p>
-                <div className="flex items-center gap-4 text-xs text-slate-500">
-                  <span className="flex items-center gap-1">
-                    <Calendar className="w-3 h-3" />
-                    {format(new Date(strategy.start_date), 'MMM d, yyyy')}
-                  </span>
-                  <span>→</span>
-                  <span>{format(new Date(strategy.end_date), 'MMM d, yyyy')}</span>
-                </div>
-              </div>
-            ))}
-          </div>
+      </div>
 
-          {selectedStrategy && (
-            <div className="lg:col-span-2 space-y-6">
-              <div className="card">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h2 className="text-2xl font-bold text-slate-900 mb-2">{selectedStrategy.title}</h2>
-                    <p className="text-slate-600">{selectedStrategy.description}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(selectedStrategy.status)}`}>
-                      {selectedStrategy.status}
-                    </span>
-                    {(isAdmin || selectedStrategy.creator_id === user?.id) && (
-                      <button
-                        onClick={() => openEditModal(selectedStrategy)}
-                        className="p-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        title="Edit strategy"
-                      >
-                        <Edit className="w-5 h-5" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-6 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-slate-400" />
-                    <span className="text-slate-600">
-                      {format(new Date(selectedStrategy.start_date), 'MMM d, yyyy')} - {format(new Date(selectedStrategy.end_date), 'MMM d, yyyy')}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Users className="w-4 h-4 text-slate-400" />
-                    <span className="text-slate-600">{selectedStrategy.creator?.full_name}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="text-xl font-semibold text-slate-900">Focus Areas</h3>
-                {focusAreas.length === 0 ? (
-                  <div className="card text-center py-8">
-                    <Target className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-                    <p className="text-gray-600">No focus areas defined yet</p>
-                  </div>
-                ) : (
-                  focusAreas.map((focusArea) => {
-                    const focusMilestones = milestones.filter(m => m.focus_area_id === focusArea.id);
-                    const focusLeads = leads.filter(l => l.focus_area_id === focusArea.id);
-
-                    return (
-                      <div key={focusArea.id} className="card">
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex-1">
-                            <h4 className="text-lg font-semibold text-slate-900 mb-1">{focusArea.title}</h4>
-                            {focusArea.description && (
-                              <p className="text-sm text-slate-600 mb-3">{focusArea.description}</p>
-                            )}
-                          </div>
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left panel */}
+        <div className="w-72 flex-shrink-0 border-r border-slate-200 bg-slate-50 overflow-y-auto">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-6 h-6 text-slate-300 animate-spin" />
+            </div>
+          ) : strategies.length === 0 ? (
+            <div className="p-6 text-center">
+              <Map className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+              <p className="text-sm text-slate-400">No strategies yet.</p>
+              {isExec && <p className="text-xs text-slate-400 mt-1">Click "New Business Strategy" to begin.</p>}
+            </div>
+          ) : (
+            <div className="p-3 space-y-1.5">
+              {strategies.map(s => {
+                const cfg = STATUS_CFG[s.status] ?? STATUS_CFG.draft;
+                return (
+                  <button
+                    key={s.id}
+                    onClick={() => selectStrategy(s)}
+                    className={`w-full text-left px-3 py-3 rounded-xl transition-colors ${selected?.id === s.id ? 'bg-white border border-slate-200 shadow-sm' : 'hover:bg-white'}`}
+                  >
+                    <div className="flex items-start gap-2">
+                      <span className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${cfg.dot}`} />
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-semibold truncate ${selected?.id === s.id ? 'text-cyan-700' : 'text-slate-800'}`}>{s.title}</p>
+                        {s.strategic_theme && <p className="text-xs text-slate-500 truncate">{s.strategic_theme}</p>}
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className={`text-xs px-1.5 py-0.5 rounded-full ${cfg.badge}`}>{cfg.label}</span>
+                          {s.target_date && <span className="text-xs text-slate-400">{new Date(s.target_date).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}</span>}
                         </div>
-
-                        {focusLeads.length > 0 && (
-                          <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Award className="w-4 h-4 text-blue-600" />
-                              <span className="text-sm font-medium text-blue-900">Strategy Leads</span>
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                              {focusLeads.map(lead => (
-                                <span key={lead.id} className="px-2 py-1 bg-white text-sm text-blue-800 rounded border border-blue-300">
-                                  {lead.user?.full_name}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        <div className="space-y-2">
-                          <h5 className="text-sm font-semibold text-slate-700">Milestones</h5>
-                          {focusMilestones.length === 0 ? (
-                            <p className="text-sm text-slate-500">No milestones yet</p>
-                          ) : (
-                            <div className="space-y-2">
-                              {focusMilestones.map(milestone => (
-                                <div key={milestone.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
-                                  {getMilestoneStatusIcon(milestone.status)}
-                                  <div className="flex-1">
-                                    <div className="font-medium text-sm text-slate-900">{milestone.title}</div>
-                                    {milestone.description && (
-                                      <div className="text-xs text-slate-600 mt-1">{milestone.description}</div>
-                                    )}
-                                  </div>
-                                  {milestone.target_date && (
-                                    <span className="text-xs text-slate-500">
-                                      Due: {format(new Date(milestone.target_date), 'MMM d, yyyy')}
-                                    </span>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-
-              {departmentStrategies.length > 0 && (
-                <div className="space-y-4">
-                  <h3 className="text-xl font-semibold text-slate-900">Department Strategies</h3>
-                  {departmentStrategies.map(deptStrategy => (
-                    <div key={deptStrategy.id} className="card border-l-4 border-purple-500">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <h4 className="font-semibold text-slate-900">{deptStrategy.title}</h4>
-                          <p className="text-sm text-slate-600 mt-1">{deptStrategy.department}</p>
-                        </div>
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(deptStrategy.status)}`}>
-                          {deptStrategy.status}
-                        </span>
-                      </div>
-                      {deptStrategy.description && (
-                        <p className="text-sm text-slate-700 mb-2">{deptStrategy.description}</p>
-                      )}
-                      <div className="text-xs text-slate-500">
-                        Created by: {deptStrategy.creator?.full_name}
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
-      )}
 
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold text-slate-900">Create New Strategy</h2>
-                <p className="text-slate-600 text-sm mt-1">Step {createStep} of 3</p>
+        {/* Right panel */}
+        {!selected ? (
+          <div className="flex-1 flex items-center justify-center bg-white">
+            <div className="text-center">
+              <Map className="w-12 h-12 text-slate-200 mx-auto mb-3" />
+              <p className="text-slate-400 text-sm">Select a strategy to view details</p>
+            </div>
+          </div>
+        ) : (
+          <div className="flex-1 flex flex-col overflow-hidden bg-white">
+            {/* Strategy header */}
+            <div className="flex-shrink-0 px-6 py-4 border-b border-slate-200">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${STATUS_CFG[selected.status]?.badge}`}>
+                      {STATUS_CFG[selected.status]?.label}
+                    </span>
+                    {selected.target_date && (
+                      <span className="flex items-center gap-1 text-xs text-slate-400">
+                        <Calendar className="w-3 h-3" />
+                        {new Date(selected.target_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      </span>
+                    )}
+                  </div>
+                  <h2 className="text-xl font-bold text-slate-900">{selected.title}</h2>
+                  {selected.strategic_theme && <p className="text-sm text-slate-500 mt-0.5">{selected.strategic_theme}</p>}
+                </div>
+                {isExec && (
+                  <button onClick={() => openEditStrategy(selected)} className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors flex-shrink-0">
+                    <Edit2 className="w-3.5 h-3.5" /> Edit
+                  </button>
+                )}
               </div>
-              <button onClick={() => { setShowCreateModal(false); resetForm(); }} className="text-gray-400 hover:text-gray-600">
-                <X className="w-6 h-6" />
-              </button>
+
+              {/* Tab nav */}
+              <div className="flex gap-0.5 mt-4">
+                {([
+                  { id: 'overview',      label: 'Overview',      icon: Map },
+                  { id: 'plans',         label: 'Dept Plans',    icon: ClipboardList },
+                  { id: 'collaboration', label: 'Collaboration', icon: MessageSquare },
+                  { id: 'audit',         label: 'Audit Trail',   icon: Clock },
+                ] as const).map(tab => {
+                  const Icon = tab.icon;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setRightTab(tab.id)}
+                      className={`flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg transition-colors ${rightTab === tab.id ? 'bg-cyan-50 text-cyan-700 font-medium' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
+                    >
+                      <Icon className="w-3.5 h-3.5" /> {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
-            <div className="p-6">
-              <div className="flex items-center justify-center mb-8">
-                <div className="flex items-center gap-2">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${createStep >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'}`}>
-                    1
-                  </div>
-                  <div className={`w-20 h-1 ${createStep >= 2 ? 'bg-blue-600' : 'bg-gray-200'}`} />
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${createStep >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'}`}>
-                    2
-                  </div>
-                  <div className={`w-20 h-1 ${createStep >= 3 ? 'bg-blue-600' : 'bg-gray-200'}`} />
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${createStep >= 3 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'}`}>
-                    3
-                  </div>
-                </div>
-              </div>
+            {/* Tab content */}
+            <div className="flex-1 overflow-y-auto p-6">
 
-              {createStep === 1 && (
-                <div className="space-y-6">
-                  <h3 className="text-lg font-semibold text-slate-900">Strategy Details</h3>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Title <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={strategyForm.title}
-                      onChange={(e) => setStrategyForm({ ...strategyForm, title: e.target.value })}
-                      className={`input-field w-full ${errors.title ? 'border-red-500' : ''}`}
-                      placeholder="e.g., Q1 2024 Growth Strategy"
-                    />
-                    {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title}</p>}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                    <textarea
-                      value={strategyForm.description}
-                      onChange={(e) => setStrategyForm({ ...strategyForm, description: e.target.value })}
-                      className="input-field w-full"
-                      rows={4}
-                      placeholder="Describe the strategy objectives and goals..."
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Start Date <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="date"
-                        value={strategyForm.start_date}
-                        onChange={(e) => setStrategyForm({ ...strategyForm, start_date: e.target.value })}
-                        className={`input-field w-full ${errors.start_date ? 'border-red-500' : ''}`}
-                      />
-                      {errors.start_date && <p className="text-red-500 text-sm mt-1">{errors.start_date}</p>}
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        End Date <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="date"
-                        value={strategyForm.end_date}
-                        onChange={(e) => setStrategyForm({ ...strategyForm, end_date: e.target.value })}
-                        className={`input-field w-full ${errors.end_date ? 'border-red-500' : ''}`}
-                      />
-                      {errors.end_date && <p className="text-red-500 text-sm mt-1">{errors.end_date}</p>}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                    <select
-                      value={strategyForm.status}
-                      onChange={(e) => setStrategyForm({ ...strategyForm, status: e.target.value as any })}
-                      className="input-field w-full"
-                    >
-                      <option value="draft">Draft</option>
-                      <option value="active">Active</option>
-                      <option value="completed">Completed</option>
-                      <option value="archived">Archived</option>
-                    </select>
-                    <p className="text-sm text-gray-500 mt-1">
-                      {strategyForm.status === 'draft' && 'Draft strategies are visible only to you'}
-                      {strategyForm.status === 'active' && 'Active strategies will notify assigned leads and appear on dashboards'}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {createStep === 2 && (
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-slate-900">Focus Areas & Milestones</h3>
-                    <button onClick={addFocusArea} className="btn-secondary text-sm flex items-center gap-1">
-                      <Plus className="w-4 h-4" />
-                      Add Focus Area
-                    </button>
-                  </div>
-
-                  {errors.focus_areas && <p className="text-red-500 text-sm">{errors.focus_areas}</p>}
-
-                  {focusAreaForms.map((focusForm, focusIdx) => (
-                    <div key={focusIdx} className="border border-gray-200 rounded-lg p-4 space-y-4">
-                      <div className="flex items-start justify-between">
-                        <h4 className="font-medium text-slate-900">Focus Area {focusIdx + 1}</h4>
-                        {focusAreaForms.length > 1 && (
-                          <button onClick={() => removeFocusArea(focusIdx)} className="text-red-500 hover:text-red-700">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        )}
-                      </div>
-
+              {/* Overview */}
+              {rightTab === 'overview' && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    {selected.description && (
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Title <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          value={focusForm.title}
-                          onChange={(e) => updateFocusArea(focusIdx, 'title', e.target.value)}
-                          className={`input-field w-full ${errors[`focus_area_${focusIdx}`] ? 'border-red-500' : ''}`}
-                          placeholder="e.g., Customer Acquisition"
-                        />
-                        {errors[`focus_area_${focusIdx}`] && <p className="text-red-500 text-sm mt-1">{errors[`focus_area_${focusIdx}`]}</p>}
+                        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Description</p>
+                        <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{selected.description}</p>
                       </div>
-
+                    )}
+                    {selected.success_measures && (
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                        <textarea
-                          value={focusForm.description}
-                          onChange={(e) => updateFocusArea(focusIdx, 'description', e.target.value)}
-                          className="input-field w-full"
-                          rows={2}
-                          placeholder="Describe this focus area..."
-                        />
+                        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Success Measures</p>
+                        <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{selected.success_measures}</p>
                       </div>
+                    )}
+                    {selected.supporting_notes && (
+                      <div>
+                        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Supporting Notes</p>
+                        <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{selected.supporting_notes}</p>
+                      </div>
+                    )}
+                    {selected.creator && (
+                      <p className="text-xs text-slate-400">
+                        Created by {selected.creator.full_name} &middot;{' '}
+                        {new Date(selected.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </p>
+                    )}
+                  </div>
 
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <label className="block text-sm font-medium text-gray-700">
-                            Milestones <span className="text-red-500">*</span>
-                          </label>
-                          <button onClick={() => addMilestone(focusIdx)} className="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1">
-                            <Plus className="w-3 h-3" />
-                            Add Milestone
-                          </button>
-                        </div>
-                        {errors[`focus_area_${focusIdx}_milestone`] && <p className="text-red-500 text-sm">{errors[`focus_area_${focusIdx}_milestone`]}</p>}
-
-                        {focusForm.milestones.map((milestone, milestoneIdx) => (
-                          <div key={milestoneIdx} className="flex gap-2 items-start bg-gray-50 p-3 rounded">
-                            <div className="flex-1 space-y-2">
-                              <input
-                                type="text"
-                                value={milestone.title}
-                                onChange={(e) => updateMilestone(focusIdx, milestoneIdx, 'title', e.target.value)}
-                                className="input-field w-full"
-                                placeholder="Milestone title"
-                              />
-                              <input
-                                type="text"
-                                value={milestone.description}
-                                onChange={(e) => updateMilestone(focusIdx, milestoneIdx, 'description', e.target.value)}
-                                className="input-field w-full text-sm"
-                                placeholder="Description (optional)"
-                              />
-                              <input
-                                type="date"
-                                value={milestone.target_date}
-                                onChange={(e) => updateMilestone(focusIdx, milestoneIdx, 'target_date', e.target.value)}
-                                className="input-field w-full text-sm"
-                              />
+                  {/* Dept assignments */}
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Department Assignments</p>
+                      {isExec && (
+                        <button onClick={() => setShowAddDept(true)} className="flex items-center gap-1 text-xs text-cyan-600 hover:text-cyan-700 font-medium">
+                          <Plus className="w-3.5 h-3.5" /> Assign Department
+                        </button>
+                      )}
+                    </div>
+                    {assignments.length === 0 ? (
+                      <div className="text-center py-6 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 text-sm">
+                        <Building2 className="w-6 h-6 mx-auto mb-1 opacity-50" />
+                        No departments assigned yet.
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {assignments.map(a => (
+                          <div key={a.id} className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                            <div className="w-8 h-8 bg-cyan-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                              <Building2 className="w-4 h-4 text-cyan-600" />
                             </div>
-                            {focusForm.milestones.length > 1 && (
-                              <button onClick={() => removeMilestone(focusIdx, milestoneIdx)} className="text-red-500 hover:text-red-700 mt-2">
-                                <X className="w-4 h-4" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-slate-800 truncate">{a.department_name}</p>
+                              {a.lead ? (
+                                <div className="flex items-center gap-1 text-xs text-slate-500">
+                                  <UserCheck className="w-3 h-3" /> {a.lead.full_name}
+                                </div>
+                              ) : (
+                                <span className="text-xs text-amber-500 flex items-center gap-1">
+                                  <AlertCircle className="w-3 h-3" /> No lead assigned
+                                </span>
+                              )}
+                            </div>
+                            {isExec && (
+                              <button onClick={() => removeAssignment(a.id)} className="text-slate-300 hover:text-rose-500 transition-colors">
+                                <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             )}
                           </div>
                         ))}
                       </div>
-                    </div>
-                  ))}
+                    )}
+                  </div>
                 </div>
               )}
 
-              {createStep === 3 && (
-                <div className="space-y-6">
-                  <h3 className="text-lg font-semibold text-slate-900">Assign Strategy Leads</h3>
-                  <p className="text-sm text-slate-600">
-                    Assign leads to each focus area. They will be able to create department strategies and manage progress.
-                  </p>
+              {/* Dept Plans */}
+              {rightTab === 'plans' && (
+                <div>
+                  {plans.length === 0 && assignments.length === 0 && (
+                    <div className="text-center py-12 text-slate-400">
+                      <ClipboardList className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                      <p className="text-sm">Assign departments first, then Strategic Leads can create their plans.</p>
+                    </div>
+                  )}
 
-                  {focusAreaForms.map((focusForm, focusIdx) => (
-                    <div key={focusIdx} className="border border-gray-200 rounded-lg p-4 space-y-3">
-                      <h4 className="font-medium text-slate-900">{focusForm.title}</h4>
-                      <div className="grid grid-cols-2 gap-2">
-                        {availableUsers.map(user => (
-                          <label key={user.id} className="flex items-center gap-2 p-2 border border-gray-200 rounded hover:bg-gray-50 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={(leadAssignments[focusIdx] || []).includes(user.id)}
-                              onChange={() => toggleLeadAssignment(focusIdx, user.id)}
-                              className="w-4 h-4 text-blue-600"
-                            />
-                            <div className="text-sm">
-                              <div className="font-medium text-slate-900">{user.full_name}</div>
-                              <div className="text-xs text-slate-500 capitalize">{user.role}</div>
+                  {/* Assignments awaiting plans */}
+                  {assignments.filter(a => !plans.some(p => p.assignment_id === a.id)).length > 0 && (
+                    <div className="mb-6">
+                      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Awaiting Department Plan</p>
+                      <div className="space-y-2">
+                        {assignments
+                          .filter(a => !plans.some(p => p.assignment_id === a.id))
+                          .map(a => (
+                            <div key={a.id} className="flex items-center gap-3 p-3 border border-dashed border-slate-200 rounded-xl">
+                              <Building2 className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm text-slate-600">{a.department_name}</p>
+                                {a.lead && <p className="text-xs text-slate-400">Lead: {a.lead.full_name}</p>}
+                              </div>
+                              {(isExec || profile?.id === a.strategic_lead_id) && (
+                                <button
+                                  onClick={() => {
+                                    setShowCreatePlan(a);
+                                    setPlanForm({ title: `${a.department_name} Strategic Plan`, overview: '' });
+                                  }}
+                                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-cyan-600 border border-cyan-200 rounded-lg hover:bg-cyan-50 font-medium transition-colors"
+                                >
+                                  <Plus className="w-3 h-3" /> Create Plan
+                                </button>
+                              )}
                             </div>
-                          </label>
-                        ))}
+                          ))}
                       </div>
                     </div>
-                  ))}
+                  )}
+
+                  {/* Existing plans */}
+                  {plans.length > 0 && (
+                    <div>
+                      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Department Strategic Plans</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {plans.map(p => {
+                          const pCfg = PLAN_STATUS_CFG[p.status] ?? PLAN_STATUS_CFG.draft;
+                          return (
+                            <button
+                              key={p.id}
+                              onClick={() => setActivePlan(p)}
+                              className="text-left p-4 border border-slate-200 rounded-xl hover:border-cyan-300 hover:shadow-sm transition-all bg-white group"
+                            >
+                              <div className="flex items-start justify-between gap-2 mb-2">
+                                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${pCfg.colour}`}>{pCfg.label}</span>
+                                <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-cyan-500 transition-colors flex-shrink-0" />
+                              </div>
+                              <p className="text-sm font-semibold text-slate-800 mb-1">{p.title}</p>
+                              <p className="text-xs text-slate-500 mb-2">{p.department_name}</p>
+                              {p.lead && (
+                                <div className="flex items-center gap-1 text-xs text-slate-400">
+                                  <UserCheck className="w-3 h-3" /> {p.lead.full_name}
+                                </div>
+                              )}
+                              {p.approved_at && (
+                                <p className="text-xs text-green-600 mt-1">
+                                  Approved {new Date(p.approved_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                </p>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Collaboration */}
+              {rightTab === 'collaboration' && (
+                <div className="max-w-2xl">
+                  <p className="text-xs text-slate-400 mb-4">
+                    Strategy-level discussion. Comments on individual department plans appear within each plan.
+                  </p>
+                  <StrategyCollaboration strategyId={selected.id} />
+                </div>
+              )}
+
+              {/* Audit Trail */}
+              {rightTab === 'audit' && (
+                <div className="max-w-2xl">
+                  {audit.length === 0 ? (
+                    <div className="text-center py-8 text-slate-400 text-sm">No audit entries yet.</div>
+                  ) : (
+                    <div className="space-y-2">
+                      {audit.map(e => (
+                        <div key={e.id} className="flex items-start gap-3 py-2.5 border-b border-slate-100 last:border-0">
+                          <div className="w-2 h-2 rounded-full bg-slate-300 mt-2 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-sm font-medium text-slate-700">{e.action}</span>
+                              {e.new_status && (
+                                <span className={`text-xs px-1.5 py-0.5 rounded-full ${PLAN_STATUS_CFG[e.new_status]?.colour ?? 'bg-slate-100 text-slate-600'}`}>
+                                  → {PLAN_STATUS_CFG[e.new_status]?.label ?? e.new_status}
+                                </span>
+                              )}
+                            </div>
+                            {e.comment && <p className="text-xs text-slate-500 mt-0.5">{e.comment}</p>}
+                            <p className="text-xs text-slate-400 mt-0.5">
+                              {e.actor?.full_name ?? 'Unknown'} &middot;{' '}
+                              {new Date(e.created_at).toLocaleDateString('en-GB', {
+                                day: 'numeric', month: 'short', year: 'numeric',
+                                hour: '2-digit', minute: '2-digit',
+                              })}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
+          </div>
+        )}
+      </div>
 
-            <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6 flex items-center justify-between">
-              <button
-                onClick={() => {
-                  if (createStep > 1) setCreateStep(createStep - 1);
-                  else { setShowCreateModal(false); resetForm(); }
-                }}
-                className="btn-secondary flex items-center gap-2"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                {createStep > 1 ? 'Back' : 'Cancel'}
-              </button>
-              <button
-                onClick={handleCreateStrategy}
-                className="btn-primary flex items-center gap-2"
-              >
-                {createStep < 3 ? (
-                  <>
-                    Next
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                ) : (
-                  <>
-                    <Send className="w-4 h-4" />
-                    Create Strategy
-                  </>
-                )}
+      {/* ── Create / Edit Business Strategy Modal ── */}
+      {showCreate && (
+        <div className="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 flex-shrink-0">
+              <h2 className="text-lg font-bold text-slate-900">{editingStrategy ? 'Edit Business Strategy' : 'New Business Strategy'}</h2>
+              <button onClick={() => { setShowCreate(false); setEditing(null); }} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Strategy Title <span className="text-rose-500">*</span></label>
+                <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500" placeholder="e.g. Operational Excellence 2026" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Strategic Theme</label>
+                <input value={form.strategic_theme} onChange={e => setForm(f => ({ ...f, strategic_theme: e.target.value }))} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500" placeholder="e.g. Growth, Efficiency, People" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={3} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500 resize-none" placeholder="Describe the strategic intent..." />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Success Measures</label>
+                <textarea value={form.success_measures} onChange={e => setForm(f => ({ ...f, success_measures: e.target.value }))} rows={2} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500 resize-none" placeholder="How will success be measured?" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Supporting Notes</label>
+                <textarea value={form.supporting_notes} onChange={e => setForm(f => ({ ...f, supporting_notes: e.target.value }))} rows={2} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500 resize-none" placeholder="Any additional context or notes..." />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Start Date</label>
+                  <input type="date" value={form.start_date} onChange={e => setForm(f => ({ ...f, start_date: e.target.value }))} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Target Date</label>
+                  <input type="date" value={form.target_date} onChange={e => setForm(f => ({ ...f, target_date: e.target.value }))} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
+                <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as Strategy['status'] }))} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500">
+                  <option value="draft">Draft</option>
+                  <option value="active">Active</option>
+                  <option value="completed">Completed</option>
+                  <option value="archived">Archived</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex-shrink-0 px-6 py-4 border-t border-slate-200 flex justify-end gap-3">
+              <button onClick={() => { setShowCreate(false); setEditing(null); }} className="px-4 py-2 text-sm text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50">Cancel</button>
+              <button onClick={saveStrategy} disabled={saving || !form.title.trim()} className="flex items-center gap-2 px-4 py-2 bg-cyan-600 text-white rounded-lg text-sm font-medium hover:bg-cyan-700 disabled:opacity-50">
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                {editingStrategy ? 'Save Changes' : 'Create Strategy'}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {showEditModal && editingStrategy && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold text-slate-900">Edit Strategy</h2>
-                <p className="text-slate-600 text-sm mt-1">Update strategy details and status</p>
-              </div>
-              <button onClick={() => { setShowEditModal(false); resetForm(); }} className="text-gray-400 hover:text-gray-600">
-                <X className="w-6 h-6" />
-              </button>
+      {/* ── Add Department Modal ── */}
+      {showAddDept && (
+        <div className="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+              <h2 className="text-lg font-bold text-slate-900">Assign Department</h2>
+              <button onClick={() => setShowAddDept(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
             </div>
-
-            <div className="p-6 space-y-6">
+            <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Title <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={strategyForm.title}
-                  onChange={(e) => setStrategyForm({ ...strategyForm, title: e.target.value })}
-                  className={`input-field w-full ${errors.title ? 'border-red-500' : ''}`}
-                  placeholder="e.g., Q1 2024 Growth Strategy"
-                />
-                {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title}</p>}
+                <label className="block text-sm font-medium text-slate-700 mb-1">Department Name <span className="text-rose-500">*</span></label>
+                <input value={deptForm.department_name} onChange={e => setDeptForm(f => ({ ...f, department_name: e.target.value }))} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500" placeholder="e.g. Sales, Engineering, People" />
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                <textarea
-                  value={strategyForm.description}
-                  onChange={(e) => setStrategyForm({ ...strategyForm, description: e.target.value })}
-                  className="input-field w-full"
-                  rows={4}
-                  placeholder="Describe the strategy objectives and goals..."
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Start Date <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    value={strategyForm.start_date}
-                    onChange={(e) => setStrategyForm({ ...strategyForm, start_date: e.target.value })}
-                    className={`input-field w-full ${errors.start_date ? 'border-red-500' : ''}`}
-                  />
-                  {errors.start_date && <p className="text-red-500 text-sm mt-1">{errors.start_date}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    End Date <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    value={strategyForm.end_date}
-                    onChange={(e) => setStrategyForm({ ...strategyForm, end_date: e.target.value })}
-                    className={`input-field w-full ${errors.end_date ? 'border-red-500' : ''}`}
-                  />
-                  {errors.end_date && <p className="text-red-500 text-sm mt-1">{errors.end_date}</p>}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                <select
-                  value={strategyForm.status}
-                  onChange={(e) => setStrategyForm({ ...strategyForm, status: e.target.value as any })}
-                  className="input-field w-full"
-                >
-                  <option value="draft">Draft</option>
-                  <option value="active">Active</option>
-                  <option value="completed">Completed</option>
-                  <option value="archived">Archived</option>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Strategic Lead</label>
+                <select value={deptForm.strategic_lead_id} onChange={e => setDeptForm(f => ({ ...f, strategic_lead_id: e.target.value }))} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500">
+                  <option value="">Select a person...</option>
+                  {availableUsers.map(u => (
+                    <option key={u.id} value={u.id}>{u.full_name} ({u.role})</option>
+                  ))}
                 </select>
-                <p className="text-sm text-gray-500 mt-1">
-                  {strategyForm.status === 'draft' && 'Draft strategies are visible only to you'}
-                  {strategyForm.status === 'active' && 'Active strategies notify assigned leads and appear on dashboards'}
-                  {strategyForm.status === 'completed' && 'Completed strategies are read-only'}
-                  {strategyForm.status === 'archived' && 'Archived strategies remain visible for reporting but not editable'}
-                </p>
+                <p className="text-xs text-slate-400 mt-1">The Strategic Lead will be notified and can create the department plan.</p>
               </div>
-
-              {editingStrategy.status !== 'active' && strategyForm.status === 'active' && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <div className="flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
-                    <div>
-                      <h4 className="font-medium text-blue-900 mb-1">Activating Strategy</h4>
-                      <p className="text-sm text-blue-700">
-                        Changing status to Active will notify all assigned strategy leads and display this strategy on their dashboards.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
+              <div className="flex justify-end gap-3 pt-2">
+                <button onClick={() => setShowAddDept(false)} className="px-4 py-2 text-sm text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50">Cancel</button>
+                <button onClick={addDeptAssignment} disabled={saving || !deptForm.department_name.trim()} className="flex items-center gap-2 px-4 py-2 bg-cyan-600 text-white rounded-lg text-sm font-medium hover:bg-cyan-700 disabled:opacity-50">
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                  Assign
+                </button>
+              </div>
             </div>
+          </div>
+        </div>
+      )}
 
-            <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6 flex items-center justify-between">
-              <button
-                onClick={() => { setShowEditModal(false); resetForm(); }}
-                className="btn-secondary"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleUpdateStrategy}
-                className="btn-primary flex items-center gap-2"
-              >
-                <CheckCircle className="w-4 h-4" />
-                Save Changes
-              </button>
+      {/* ── Create Dept Plan Modal ── */}
+      {showCreatePlan && (
+        <div className="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">Create Department Strategic Plan</h2>
+                <p className="text-sm text-slate-500">{showCreatePlan.department_name}</p>
+              </div>
+              <button onClick={() => setShowCreatePlan(null)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Plan Title <span className="text-rose-500">*</span></label>
+                <input value={planForm.title} onChange={e => setPlanForm(f => ({ ...f, title: e.target.value }))} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Overview</label>
+                <textarea value={planForm.overview} onChange={e => setPlanForm(f => ({ ...f, overview: e.target.value }))} rows={3} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500 resize-none" placeholder="How will your department contribute to the strategy?" />
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button onClick={() => setShowCreatePlan(null)} className="px-4 py-2 text-sm text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50">Cancel</button>
+                <button onClick={() => createPlan(showCreatePlan)} disabled={saving || !planForm.title.trim()} className="flex items-center gap-2 px-4 py-2 bg-cyan-600 text-white rounded-lg text-sm font-medium hover:bg-cyan-700 disabled:opacity-50">
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                  Create Plan
+                </button>
+              </div>
             </div>
           </div>
         </div>

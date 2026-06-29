@@ -36,7 +36,7 @@ export function Sidebar({ currentPath, onNavigate }: SidebarProps) {
     { icon: MessageSquare, label: 'Opal', path: '/marti' },
   ];
 
-  const roadmapNavItem = { icon: Map, label: 'Strategies', path: '/strategies' };
+  const roadmapNavItem = { icon: Map, label: 'Strategic Mapping', path: '/strategies' };
   const adminNavItem = { icon: Shield, label: 'Admin', path: '/admin' };
 
   const displayProfile = effectiveProfile || profile;
