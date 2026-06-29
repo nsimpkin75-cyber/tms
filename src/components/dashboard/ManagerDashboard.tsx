@@ -1397,12 +1397,12 @@ export function ManagerDashboard({ onNavigate }: ManagerDashboardProps = {}) {
         </div>
       </div>
 
-      {/* Lightweight SERA widget */}
+      {/* Lightweight Opal widget */}
       <div className="card border border-sky-100 bg-sky-50/50">
         <div className="flex items-center gap-3 mb-3">
           <div className="p-2 bg-sky-100 rounded-lg"><MessageSquare className="w-4 h-4 text-sky-600" /></div>
           <div>
-            <h3 className="font-semibold text-slate-900 text-sm">SERA — Ask about your team</h3>
+            <h3 className="font-semibold text-slate-900 text-sm">Opal — Ask about your team</h3>
             <p className="text-xs text-slate-500">Try: "What are my outstanding actions?", "How many 1:1s this week?", "Which reviews are overdue?"</p>
           </div>
         </div>

@@ -161,7 +161,7 @@ export default function SeraCareerFeedback() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">SERA Career Coach Feedback</h2>
+        <h2 className="text-2xl font-bold text-gray-900">Opal Career Coach Feedback</h2>
         <p className="text-gray-600 mt-1">Review AI career coaching responses and provide quality feedback. This does not affect review ratings or moderation.</p>
       </div>
 
@@ -288,7 +288,7 @@ export default function SeraCareerFeedback() {
                   <div className="border-t border-gray-100 bg-gray-50 p-4 space-y-6">
                     {/* Context snapshot */}
                     <div className="bg-white rounded-lg border border-gray-200 p-4">
-                      <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Context SERA had access to</h4>
+                      <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Context Opal had access to</h4>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                         {Object.entries(session.context_snapshot || {}).map(([k, v]) => {
                           if (v === null || v === undefined) return null;
@@ -322,10 +322,10 @@ export default function SeraCareerFeedback() {
                               </div>
                             )}
 
-                            {/* SERA response */}
+                            {/* Opal response */}
                             <div className="px-4 py-3">
                               <div className="flex items-center gap-1.5 mb-2">
-                                <span className="text-xs font-semibold text-teal-600">SERA responded:</span>
+                                <span className="text-xs font-semibold text-teal-600">Opal responded:</span>
                                 {existingFb && !pending && (
                                   <span className={`ml-2 px-2 py-0.5 text-xs rounded-full border ${RATING_CONFIG[existingFb.feedback_rating].bg} ${RATING_CONFIG[existingFb.feedback_rating].border} ${RATING_CONFIG[existingFb.feedback_rating].color}`}>
                                     {RATING_CONFIG[existingFb.feedback_rating].label}

@@ -81,8 +81,8 @@ export default function Admin() {
     {
       title: 'System',
       items: [
-        { id: 'marti' as TabType, label: 'SERA Configuration', icon: Bot },
-        { id: 'sera-career-feedback' as TabType, label: 'SERA Career Feedback', icon: MessageSquare },
+        { id: 'marti' as TabType, label: 'Opal Configuration', icon: Bot },
+        { id: 'sera-career-feedback' as TabType, label: 'Opal Career Feedback', icon: MessageSquare },
         { id: 'moderation-workflow' as TabType, label: 'Moderation Workflows', icon: ShieldCheck },
         { id: 'exec-moderators' as TabType, label: 'Exec Moderator Access', icon: Gavel },
         { id: 'language' as TabType, label: 'Language', icon: Globe },

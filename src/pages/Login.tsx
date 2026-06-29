@@ -2,6 +2,69 @@ import { useState, FormEvent, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 
+function OpalAvatar({ size = 80 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Opal">
+      <defs>
+        <radialGradient id="opal-bg" cx="50%" cy="40%" r="55%">
+          <stop offset="0%" stopColor="#e0f7fa" />
+          <stop offset="40%" stopColor="#b2ebf2" />
+          <stop offset="100%" stopColor="#00bcd4" />
+        </radialGradient>
+        <radialGradient id="opal-face" cx="50%" cy="45%" r="50%">
+          <stop offset="0%" stopColor="#ffffff" />
+          <stop offset="100%" stopColor="#e0f7fa" />
+        </radialGradient>
+        <radialGradient id="opal-iris" cx="40%" cy="35%" r="55%">
+          <stop offset="0%" stopColor="#80deea" />
+          <stop offset="60%" stopColor="#00bcd4" />
+          <stop offset="100%" stopColor="#006064" />
+        </radialGradient>
+        <radialGradient id="opal-shimmer" cx="30%" cy="30%" r="70%">
+          <stop offset="0%" stopColor="rgba(255,255,255,0.6)" />
+          <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+        </radialGradient>
+        <linearGradient id="opal-glow" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#b2ebf2" stopOpacity="0.8" />
+          <stop offset="50%" stopColor="#e0f7fa" stopOpacity="0.4" />
+          <stop offset="100%" stopColor="#00bcd4" stopOpacity="0.6" />
+        </linearGradient>
+        <filter id="opal-blur">
+          <feGaussianBlur stdDeviation="1.5" />
+        </filter>
+      </defs>
+      {/* Outer glow ring */}
+      <circle cx="40" cy="40" r="38" fill="none" stroke="url(#opal-glow)" strokeWidth="2" opacity="0.7" />
+      {/* Main circle */}
+      <circle cx="40" cy="40" r="36" fill="url(#opal-bg)" />
+      {/* Shimmer overlay */}
+      <circle cx="40" cy="40" r="36" fill="url(#opal-shimmer)" />
+      {/* Face */}
+      <ellipse cx="40" cy="42" rx="22" ry="24" fill="url(#opal-face)" />
+      {/* Hair — soft arc */}
+      <path d="M18 38 Q20 16 40 14 Q60 16 62 38 Q55 20 40 20 Q25 20 18 38Z" fill="#00838f" opacity="0.8" />
+      {/* Left eye */}
+      <ellipse cx="32" cy="39" rx="5" ry="5.5" fill="white" />
+      <ellipse cx="32" cy="39" rx="3.5" ry="3.8" fill="url(#opal-iris)" />
+      <ellipse cx="32" cy="39" rx="2" ry="2.2" fill="#004d40" />
+      <circle cx="33.2" cy="37.8" r="0.9" fill="white" />
+      {/* Right eye */}
+      <ellipse cx="48" cy="39" rx="5" ry="5.5" fill="white" />
+      <ellipse cx="48" cy="39" rx="3.5" ry="3.8" fill="url(#opal-iris)" />
+      <ellipse cx="48" cy="39" rx="2" ry="2.2" fill="#004d40" />
+      <circle cx="49.2" cy="37.8" r="0.9" fill="white" />
+      {/* Nose — minimal */}
+      <path d="M38.5 44 Q40 46 41.5 44" stroke="#80cbc4" strokeWidth="1" fill="none" strokeLinecap="round" />
+      {/* Mouth — gentle smile */}
+      <path d="M34 50 Q40 55 46 50" stroke="#00838f" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      {/* Collar/neck hint */}
+      <path d="M30 64 Q40 68 50 64 L52 76 Q40 78 28 76Z" fill="#00838f" opacity="0.5" />
+      {/* Iridescent highlight */}
+      <ellipse cx="29" cy="28" rx="6" ry="4" fill="white" opacity="0.3" transform="rotate(-20 29 28)" />
+    </svg>
+  );
+}
+
 export function Login() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
@@ -35,7 +98,7 @@ export function Login() {
 
     try {
       if (isForgotPassword) {
-        setError('Password reset via email is not currently configured. Please contact your administrator (nicola.hurcombe@eposnow.com) to reset your password.');
+        setError('Password reset via email is not currently configured. Please contact your administrator to reset your password.');
         setLoading(false);
         return;
       } else if (isResettingPassword) {
@@ -63,181 +126,212 @@ export function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8">
-        <div className="text-center mb-8">
-          <img
-            src="/eposnow_futures.jpg"
-            alt="Futures"
-            className="w-32 h-32 mx-auto mb-4 object-contain"
-          />
-          <h1 className="text-3xl font-bold text-slate-900">Futures</h1>
-          <p className="text-slate-600 mt-2">
-            {isResettingPassword ? 'Reset Your Password' :
-             isForgotPassword ? 'Reset Password' :
-             'Talent Management System'}
-          </p>
+    <div className="min-h-screen flex">
+      {/* Left panel — branding */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-slate-900 via-slate-800 to-cyan-900 flex-col items-center justify-center p-12 relative overflow-hidden">
+        {/* Background shimmer circles */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-cyan-400/10 blur-3xl" />
+          <div className="absolute bottom-1/3 right-1/4 w-80 h-80 rounded-full bg-teal-300/10 blur-3xl" />
+          <div className="absolute top-1/2 right-1/3 w-48 h-48 rounded-full bg-cyan-300/5 blur-2xl" />
         </div>
+        <div className="relative z-10 text-center max-w-sm">
+          <div className="flex items-center justify-center mb-8">
+            <OpalAvatar size={96} />
+          </div>
+          <h1 className="text-5xl font-bold text-white tracking-tight mb-3">Evolo</h1>
+          <p className="text-cyan-300 text-lg font-medium mb-4">The People Operating System</p>
+          <p className="text-slate-400 text-sm leading-relaxed">
+            Bringing people and organisations together for continuous growth.
+          </p>
+          <div className="mt-10 pt-8 border-t border-slate-700/60">
+            <p className="text-slate-500 text-xs">
+              Powered by <span className="text-cyan-400 font-medium">Opal</span> — your AI Growth Guide
+            </p>
+          </div>
+        </div>
+      </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {isResettingPassword ? (
-            <div>
-              <label htmlFor="newPassword" className="block text-sm font-medium text-slate-700 mb-2">
-                New Password
-              </label>
-              <input
-                id="newPassword"
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className="input-field"
-                placeholder="Enter your new password"
-                minLength={6}
-                required
-              />
-              <p className="text-xs text-slate-500 mt-1">Password must be at least 6 characters</p>
+      {/* Right panel — form */}
+      <div className="flex-1 flex items-center justify-center p-6 bg-white">
+        <div className="w-full max-w-md">
+          {/* Mobile logo */}
+          <div className="lg:hidden text-center mb-8">
+            <div className="flex items-center justify-center mb-4">
+              <OpalAvatar size={64} />
             </div>
-          ) : isForgotPassword ? (
-            <div>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                <p className="text-sm text-blue-900">
-                  <strong>Need to reset your password?</strong>
-                </p>
-                <p className="text-sm text-blue-800 mt-2">
-                  Please contact your administrator to reset your password:
-                </p>
-                <p className="text-sm text-blue-900 font-medium mt-1">
-                  nicola.hurcombe@eposnow.com
-                </p>
-              </div>
-            </div>
-          ) : (
-            <>
-              {isSignUp && (
-                <>
-                  <div>
-                    <label htmlFor="firstName" className="block text-sm font-medium text-slate-700 mb-2">
-                      First Name
-                    </label>
-                    <input
-                      id="firstName"
-                      type="text"
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      className="input-field"
-                      placeholder="John"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="lastName" className="block text-sm font-medium text-slate-700 mb-2">
-                      Last Name
-                    </label>
-                    <input
-                      id="lastName"
-                      type="text"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      className="input-field"
-                      placeholder="Doe"
-                      required
-                    />
-                  </div>
-                </>
-              )}
+            <h1 className="text-3xl font-bold text-slate-900">Evolo</h1>
+            <p className="text-slate-500 text-sm mt-1">The People Operating System</p>
+          </div>
 
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-slate-900">
+              {isResettingPassword ? 'Reset your password' :
+               isForgotPassword ? 'Forgot password' :
+               isSignUp ? 'Create your account' :
+               'Welcome back'}
+            </h2>
+            <p className="text-slate-500 mt-1 text-sm">
+              {isResettingPassword ? 'Enter your new password below.' :
+               isForgotPassword ? 'Contact your administrator to reset access.' :
+               isSignUp ? 'Join your team on Evolo.' :
+               'Sign in to continue to Evolo.'}
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {isResettingPassword ? (
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
-                  Email Address
+                <label htmlFor="newPassword" className="block text-sm font-medium text-slate-700 mb-2">
+                  New Password
                 </label>
                 <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="input-field"
-                  placeholder="you@example.com"
-                  required
-                />
-              </div>
-
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-2">
-                  Password
-                </label>
-                <input
-                  id="password"
+                  id="newPassword"
                   type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
                   className="input-field"
-                  placeholder="••••••••"
+                  placeholder="Enter your new password"
+                  minLength={6}
                   required
                 />
+                <p className="text-xs text-slate-500 mt-1">Password must be at least 6 characters</p>
               </div>
-            </>
-          )}
+            ) : isForgotPassword ? (
+              <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-4">
+                <p className="text-sm text-cyan-900 font-medium">Need to reset your password?</p>
+                <p className="text-sm text-cyan-800 mt-2">
+                  Please contact your administrator to reset your password.
+                </p>
+              </div>
+            ) : (
+              <>
+                {isSignUp && (
+                  <>
+                    <div>
+                      <label htmlFor="firstName" className="block text-sm font-medium text-slate-700 mb-2">
+                        First Name
+                      </label>
+                      <input
+                        id="firstName"
+                        type="text"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        className="input-field"
+                        placeholder="Jane"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="lastName" className="block text-sm font-medium text-slate-700 mb-2">
+                        Last Name
+                      </label>
+                      <input
+                        id="lastName"
+                        type="text"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        className="input-field"
+                        placeholder="Smith"
+                        required
+                      />
+                    </div>
+                  </>
+                )}
 
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-              {error}
-            </div>
-          )}
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
+                    Email Address
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="input-field"
+                    placeholder="you@example.com"
+                    required
+                  />
+                </div>
 
-          {success && (
-            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
-              {success}
-            </div>
-          )}
+                <div>
+                  <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-2">
+                    Password
+                  </label>
+                  <input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="input-field"
+                    placeholder="••••••••"
+                    required
+                  />
+                </div>
+              </>
+            )}
 
-          {!isForgotPassword && (
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                isResettingPassword ? 'Updating password...' :
-                isSignUp ? 'Creating account...' :
-                'Signing in...'
-              ) : (
-                isResettingPassword ? 'Update Password' :
-                isSignUp ? 'Create Account' :
-                'Sign In'
-              )}
-            </button>
-          )}
-        </form>
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
 
-        {!isResettingPassword && (
-          <div className="mt-4 text-center space-y-2">
+            {success && (
+              <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
+                {success}
+              </div>
+            )}
+
             {!isForgotPassword && (
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  isResettingPassword ? 'Updating password...' :
+                  isSignUp ? 'Creating account...' :
+                  'Signing in...'
+                ) : (
+                  isResettingPassword ? 'Update Password' :
+                  isSignUp ? 'Create Account' :
+                  'Sign In'
+                )}
+              </button>
+            )}
+          </form>
+
+          {!isResettingPassword && (
+            <div className="mt-5 text-center space-y-2">
+              {!isForgotPassword && (
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setIsSignUp(!isSignUp)}
+                    className="text-sm text-cyan-700 hover:text-cyan-900 font-medium"
+                  >
+                    {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
+                  </button>
+                </div>
+              )}
               <div>
                 <button
                   type="button"
-                  onClick={() => setIsSignUp(!isSignUp)}
-                  className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                  onClick={() => {
+                    setIsForgotPassword(!isForgotPassword);
+                    setIsSignUp(false);
+                    setError('');
+                    setSuccess('');
+                  }}
+                  className="text-sm text-slate-500 hover:text-slate-700 font-medium"
                 >
-                  {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
+                  {isForgotPassword ? 'Back to sign in' : 'Forgot password?'}
                 </button>
               </div>
-            )}
-            <div>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsForgotPassword(!isForgotPassword);
-                  setIsSignUp(false);
-                  setError('');
-                  setSuccess('');
-                }}
-                className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-              >
-                {isForgotPassword ? 'Back to sign in' : 'Forgot password?'}
-              </button>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

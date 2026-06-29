@@ -1094,7 +1094,7 @@ export default function ReviewConductor({ meetingId, onClose }: ReviewConductorP
                           <div className="col-span-2 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
                             <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
                             <p className="text-sm text-amber-800">
-                              Rating {assessment.manager_rating}/5 will trigger the moderation workflow. SERA has reviewed the justification.
+                              Rating {assessment.manager_rating}/5 will trigger the moderation workflow. Opal has reviewed the justification.
                             </p>
                           </div>
                         )}

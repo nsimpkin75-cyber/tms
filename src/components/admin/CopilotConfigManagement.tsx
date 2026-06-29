@@ -148,8 +148,8 @@ export default function CopilotConfigManagement() {
       if (error) throw error;
       setConfigs(data || []);
     } catch (err) {
-      console.error('Error loading SERA configurations:', err);
-      setToast({ type: 'error', message: 'Failed to load SERA configurations. Please try again.' });
+      console.error('Error loading Opal configurations:', err);
+      setToast({ type: 'error', message: 'Failed to load Opal configurations. Please try again.' });
     } finally {
       setLoading(false);
     }
@@ -254,7 +254,7 @@ export default function CopilotConfigManagement() {
       closeModal();
       await fetchConfigs();
     } catch (err) {
-      console.error('Error saving SERA configuration:', err);
+      console.error('Error saving Opal configuration:', err);
       setToast({ type: 'error', message: 'Failed to save configuration. Please try again.' });
     } finally {
       setSaving(false);
@@ -314,7 +314,7 @@ export default function CopilotConfigManagement() {
       if (error) throw error;
       setFeedbackLog(data || []);
     } catch (err) {
-      console.error('Error loading SERA feedback log:', err);
+      console.error('Error loading Opal feedback log:', err);
       setToast({ type: 'error', message: 'Failed to load feedback log.' });
     } finally {
       setFeedbackLoading(false);
@@ -406,9 +406,9 @@ export default function CopilotConfigManagement() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">SERA Configuration</h2>
+          <h2 className="text-xl font-semibold text-gray-900">Opal Configuration</h2>
           <p className="text-sm text-gray-600 mt-1">
-            Configure the SERA AI assistant — model settings, system prompts, and behaviour thresholds
+            Configure the Opal AI assistant — model settings, system prompts, and behaviour thresholds
           </p>
         </div>
         {pageView === 'configs' && (
@@ -460,7 +460,7 @@ export default function CopilotConfigManagement() {
         <div className="text-center py-16 border-2 border-dashed border-gray-200 rounded-xl">
           <Bot className="w-12 h-12 mx-auto mb-3 text-gray-300" />
           <p className="text-gray-500 font-medium">No configurations yet</p>
-          <p className="text-sm text-gray-400 mt-1 mb-4">Create your first SERA configuration to get started</p>
+          <p className="text-sm text-gray-400 mt-1 mb-4">Create your first Opal configuration to get started</p>
           <button
             onClick={openNew}
             className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
@@ -592,7 +592,7 @@ export default function CopilotConfigManagement() {
           </div>
 
           <p className="text-xs text-gray-500">
-            Review SERA outputs and mark them as Helpful or Needs Improvement to guide future system prompt and knowledge base updates. No automatic retraining occurs.
+            Review Opal outputs and mark them as Helpful or Needs Improvement to guide future system prompt and knowledge base updates. No automatic retraining occurs.
           </p>
 
           {feedbackLoading ? (
@@ -605,7 +605,7 @@ export default function CopilotConfigManagement() {
               <p className="text-gray-500 font-medium">No log entries yet</p>
               <p className="text-sm text-gray-400 mt-1">
                 {feedbackFilter === 'all'
-                  ? 'SERA interactions will appear here once managers submit ratings of 4 or 5.'
+                  ? 'Opal interactions will appear here once managers submit ratings of 4 or 5.'
                   : 'No entries match the current filter.'}
               </p>
             </div>
@@ -699,7 +699,7 @@ export default function CopilotConfigManagement() {
                         </div>
                         <div className="space-y-3">
                           <div>
-                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">SERA Response</p>
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Opal Response</p>
                             <div className={`text-sm rounded-lg p-3 border ${
                               entry.sera_response_valid
                                 ? 'bg-green-50 border-green-200 text-green-800'
@@ -716,7 +716,7 @@ export default function CopilotConfigManagement() {
                           </div>
                           {entry.sera_prompt && (
                             <div>
-                              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">SERA Suggestion</p>
+                              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Opal Suggestion</p>
                               <p className="text-sm text-blue-800 bg-blue-50 border border-blue-200 rounded-lg p-3">{entry.sera_prompt}</p>
                             </div>
                           )}
@@ -797,7 +797,7 @@ export default function CopilotConfigManagement() {
             {/* Modal header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 flex-shrink-0">
               <h3 className="text-lg font-semibold text-gray-900">
-                {editingConfig ? `Edit — ${editingConfig.name}` : 'New SERA Configuration'}
+                {editingConfig ? `Edit — ${editingConfig.name}` : 'New Opal Configuration'}
               </h3>
               <button onClick={closeModal} className="p-1.5 text-gray-400 hover:text-gray-700 rounded-lg">
                 <X className="w-5 h-5" />
@@ -948,10 +948,10 @@ export default function CopilotConfigManagement() {
                         onChange={e => setForm(f => ({ ...f, system_prompt: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm font-mono"
                         rows={10}
-                        placeholder="You are SERA, an AI career development coach..."
+                        placeholder="You are Opal, an AI Growth Guide for Evolo..."
                         required
                       />
-                      <p className="text-xs text-gray-500 mt-1">Defines SERA's core identity, tone and behavioural boundaries.</p>
+                      <p className="text-xs text-gray-500 mt-1">Defines Opal's core identity, tone and behavioural boundaries.</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Knowledge Base</label>
@@ -962,7 +962,7 @@ export default function CopilotConfigManagement() {
                         rows={10}
                         placeholder="Additional context, coaching methodologies, example conversations, organisation-specific guidance..."
                       />
-                      <p className="text-xs text-gray-500 mt-1">Supplementary knowledge SERA can draw on during coaching sessions.</p>
+                      <p className="text-xs text-gray-500 mt-1">Supplementary knowledge Opal can draw on during coaching sessions.</p>
                     </div>
                   </div>
                 )}
@@ -985,7 +985,7 @@ export default function CopilotConfigManagement() {
                           onChange={e => setForm(f => ({ ...f, intervention_score_threshold: parseInt(e.target.value) || 4 }))}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
                         />
-                        <p className="text-xs text-gray-500 mt-1">Rating score (1–5) at which SERA flags evidence for review. Default: 4.</p>
+                        <p className="text-xs text-gray-500 mt-1">Rating score (1–5) at which Opal flags evidence for review. Default: 4.</p>
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -999,7 +999,7 @@ export default function CopilotConfigManagement() {
                           onChange={e => setForm(f => ({ ...f, ai_intervention_threshold: parseInt(e.target.value) || 1 }))}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
                         />
-                        <p className="text-xs text-gray-500 mt-1">Internal score (1–10) controlling SERA proactive support. Default: 3.</p>
+                        <p className="text-xs text-gray-500 mt-1">Internal score (1–10) controlling Opal proactive support. Default: 3.</p>
                       </div>
                     </div>
 
@@ -1008,10 +1008,10 @@ export default function CopilotConfigManagement() {
                       <p className="text-sm font-semibold text-gray-800 mb-3">Level 5 Evidence Standards</p>
                       <div className="space-y-3">
                         {([
-                          { key: 'challenge_weak_level5_evidence',             label: 'Challenge weak level 5 evidence',               desc: 'SERA prompts reviewers to justify vague or unsupported level 5 ratings.' },
+                          { key: 'challenge_weak_level5_evidence',             label: 'Challenge weak level 5 evidence',               desc: 'Opal prompts reviewers to justify vague or unsupported level 5 ratings.' },
                           { key: 'require_measurable_outcomes_level5',         label: 'Require measurable outcomes for level 5',        desc: 'Level 5 ratings must include specific, measurable impact examples.' },
                           { key: 'require_multiple_examples_level5',           label: 'Require multiple examples for level 5',          desc: 'A single example is not sufficient evidence for a level 5 rating.' },
-                          { key: 'suggest_star_format_improvements',           label: 'Suggest STAR format improvements',               desc: 'SERA recommends structuring evidence using Situation, Task, Action, Result.' },
+                          { key: 'suggest_star_format_improvements',           label: 'Suggest STAR format improvements',               desc: 'Opal recommends structuring evidence using Situation, Task, Action, Result.' },
                           { key: 'auto_recommend_moderation_unsupported_5s',   label: 'Auto recommend moderation for unsupported 5s',   desc: 'Automatically flags level 5 ratings without strong evidence for moderation review.' },
                         ] as const).map(({ key, label, desc }) => (
                           <label key={key} className="flex items-start gap-3 cursor-pointer p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
@@ -1050,7 +1050,7 @@ export default function CopilotConfigManagement() {
                         </div>
                         <div>
                           <p className="text-sm font-medium text-gray-800">Auto suggest development actions</p>
-                          <p className="text-xs text-gray-500 mt-0.5">SERA proactively recommends next development steps without waiting to be asked.</p>
+                          <p className="text-xs text-gray-500 mt-0.5">Opal proactively recommends next development steps without waiting to be asked.</p>
                         </div>
                       </label>
                     </div>
@@ -1061,7 +1061,7 @@ export default function CopilotConfigManagement() {
                         Behaviour Instructions
                       </label>
                       <p className="text-xs text-gray-500 mb-2">
-                        Lightweight behavioural rules SERA follows. Add one instruction per line. These supplement the system prompt without replacing it.
+                        Lightweight behavioural rules Opal follows. Add one instruction per line. These supplement the system prompt without replacing it.
                       </p>
                       <textarea
                         value={form.behaviour_instructions}

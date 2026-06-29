@@ -668,14 +668,14 @@ export function EmployeeDashboard({ onNavigate }: EmployeeDashboardProps = {}) {
         </div>
       </div>
 
-      {/* SERA assistant */}
+      {/* Opal assistant */}
       <div className="card">
         <div className="flex items-center gap-3 mb-5">
           <div className="p-2.5 bg-sky-100 rounded-lg">
             <MessageSquare className="w-5 h-5 text-sky-600" />
           </div>
           <div>
-            <h3 className="font-semibold text-slate-900">SERA — Your Career Assistant</h3>
+            <h3 className="font-semibold text-slate-900">Opal — Your Growth Guide</h3>
             <p className="text-xs text-slate-500">AI-powered career guidance and planning</p>
           </div>
         </div>

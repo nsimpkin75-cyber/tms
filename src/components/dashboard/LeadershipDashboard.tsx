@@ -182,7 +182,7 @@ export function LeadershipDashboard({ onNavigate }: LeadershipDashboardProps = {
   }>>([]);
   const [selectedDeptPlanId, setSelectedDeptPlanId] = useState<string | null>(null);
 
-  // Lightweight SERA widget
+  // Lightweight Opal widget
   const [seraQuery, setSeraQuery] = useState('');
   const [seraResponse, setSeraResponse] = useState('');
   const seraInputRef = useRef<HTMLInputElement>(null);
@@ -1452,7 +1452,7 @@ export function LeadershipDashboard({ onNavigate }: LeadershipDashboardProps = {
           </div>
         )}
 
-        {/* Lightweight SERA widget */}
+        {/* Lightweight Opal widget */}
         <SeraWidget answerFn={answerSeraQuery} inputRef={seraInputRef} query={seraQuery} setQuery={setSeraQuery} response={seraResponse} setResponse={setSeraResponse} />
 
         {/* 1:1 Status Drawer */}
@@ -2120,7 +2120,7 @@ export function LeadershipDashboard({ onNavigate }: LeadershipDashboardProps = {
         )}
       </div>
 
-      {/* Lightweight SERA widget */}
+      {/* Lightweight Opal widget */}
       <SeraWidget answerFn={answerSeraQuery} inputRef={seraInputRef} query={seraQuery} setQuery={setSeraQuery} response={seraResponse} setResponse={setSeraResponse} />
 
       {/* 1:1 Status Drawer */}
@@ -2148,7 +2148,7 @@ function SeraWidget({ answerFn, inputRef, query, setQuery, response, setResponse
       <div className="flex items-center gap-3 mb-3">
         <div className="p-2 bg-sky-100 rounded-lg"><MessageSquare className="w-4 h-4 text-sky-600" /></div>
         <div>
-          <h3 className="font-semibold text-slate-900 text-sm">SERA — Ask about your dashboard</h3>
+          <h3 className="font-semibold text-slate-900 text-sm">Opal — Ask about your dashboard</h3>
           <p className="text-xs text-slate-500">Try: "How many missed 1:1s?", "Show overdue reviews", "How many career plans?"</p>
         </div>
       </div>

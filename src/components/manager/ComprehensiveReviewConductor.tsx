@@ -427,7 +427,7 @@ export default function ComprehensiveReviewConductor() {
       const capturedSeraSystemPrompt = seraSystemPrompt;
 
       if (seraTimers.current[key]) clearTimeout(seraTimers.current[key]);
-      setSeraFeedbacks(prev => ({ ...prev, [key]: { type: 'loading', message: 'SERA is evaluating...' } }));
+      setSeraFeedbacks(prev => ({ ...prev, [key]: { type: 'loading', message: 'Opal is evaluating...' } }));
 
       seraTimers.current[key] = setTimeout(async () => {
         try {
@@ -469,11 +469,11 @@ export default function ComprehensiveReviewConductor() {
             },
           }));
         } catch (err) {
-          console.error('[SERA] Feedback request failed:', err);
+          console.error('[Opal] Feedback request failed:', err);
           const fallbackMsg = rating >= 5
-            ? 'SERA feedback is unavailable right now. Please ensure level 5 ratings include measurable impact, multiple examples and clear business or merchant outcomes.'
+            ? 'Opal feedback is unavailable right now. Please ensure level 5 ratings include measurable impact, multiple examples and clear business or merchant outcomes.'
             : rating === 4
-            ? 'SERA feedback is unavailable right now. Please ensure this rating is supported by specific evidence and measurable outcomes.'
+            ? 'Opal feedback is unavailable right now. Please ensure this rating is supported by specific evidence and measurable outcomes.'
             : null;
           setSeraFeedbacks(prev => ({
             ...prev,

@@ -75,7 +75,7 @@ export default function SeraValidationModal({
       setHasValidated(true);
       setStep('result');
 
-      // Fire-and-forget: log this SERA interaction for admin review
+      // Fire-and-forget: log this Opal interaction for admin review
       const { data: { user } } = await supabase.auth.getUser();
       supabase.from('sera_feedback_log').insert([{
         logged_by_user_id: user?.id ?? null,
@@ -144,7 +144,7 @@ export default function SeraValidationModal({
                 <Sparkles className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h3 className="text-white font-semibold">SERA Rating Review</h3>
+                <h3 className="text-white font-semibold">Opal Rating Review</h3>
                 <p className="text-sky-200 text-xs">AI-powered justification validation</p>
               </div>
             </div>
@@ -175,7 +175,7 @@ export default function SeraValidationModal({
                 <Loader2 className="w-8 h-8 text-sky-600 animate-spin" />
               </div>
               <div className="text-center">
-                <p className="font-medium text-slate-900">SERA is reviewing the justification...</p>
+                <p className="font-medium text-slate-900">Opal is reviewing the justification...</p>
                 <p className="text-sm text-slate-500 mt-1">Checking that comments support this rating</p>
               </div>
             </div>
@@ -207,7 +207,7 @@ export default function SeraValidationModal({
 
               {!validation.valid && validation.prompt && (
                 <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide mb-1">SERA suggests</p>
+                  <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide mb-1">Opal suggests</p>
                   <p className="text-sm text-blue-800">{validation.prompt}</p>
                 </div>
               )}
@@ -233,7 +233,7 @@ export default function SeraValidationModal({
                   className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors text-sm font-medium"
                 >
                   <Sparkles className="w-4 h-4" />
-                  Re-validate with SERA
+                  Re-validate with Opal
                 </button>
               )}
 
@@ -258,7 +258,7 @@ export default function SeraValidationModal({
                     onClick={() => setStep('override')}
                     className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors text-sm font-medium"
                   >
-                    Override SERA &amp; Submit Anyway
+                    Override Opal &amp; Submit Anyway
                     <ChevronRight className="w-4 h-4" />
                   </button>
                 )}
@@ -280,7 +280,7 @@ export default function SeraValidationModal({
                   <div>
                     <p className="text-sm font-semibold text-amber-900">Manager Override</p>
                     <p className="text-sm text-amber-700 mt-1">
-                      You are overriding SERA's validation. This rating and your override reason will be included in the moderation case for approvers to review.
+                      You are overriding Opal's validation. This rating and your override reason will be included in the moderation case for approvers to review.
                     </p>
                   </div>
                 </div>
@@ -295,7 +295,7 @@ export default function SeraValidationModal({
                   onChange={(e) => setOverrideReason(e.target.value)}
                   rows={3}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 resize-none"
-                  placeholder="Explain why you are proceeding despite SERA's feedback..."
+                  placeholder="Explain why you are proceeding despite Opal's feedback..."
                 />
               </div>
 

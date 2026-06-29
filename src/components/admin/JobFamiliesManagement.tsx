@@ -305,7 +305,7 @@ export default function JobFamiliesManagement() {
               )}
               {job.sera_coaching_context && (
                 <span className="text-xs text-orange-700 bg-orange-50 px-2 py-0.5 rounded-full border border-orange-200 flex items-center gap-1">
-                  <Brain className="w-3 h-3" /> SERA context
+                  <Brain className="w-3 h-3" /> Opal context
                 </span>
               )}
             </div>
@@ -810,7 +810,7 @@ export default function JobFamiliesManagement() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">How Do I Get There</label>
                   <p className="text-xs text-gray-500 mb-2">
                     Actions, learning, experience, or preparation an employee can take to progress into this role.
-                    Shown to employees in Explore Careers and used by SERA for coaching recommendations.
+                    Shown to employees in Explore Careers and used by Opal for coaching recommendations.
                   </p>
                   <textarea
                     value={formData.how_do_i_get_there}
@@ -821,7 +821,7 @@ export default function JobFamiliesManagement() {
                   />
                 </div>
 
-                {/* SERA Private Coaching Section */}
+                {/* Opal Private Coaching Section */}
                 <div className="border-t-2 border-orange-200 pt-4">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="p-1.5 bg-orange-100 rounded">
@@ -829,13 +829,13 @@ export default function JobFamiliesManagement() {
                     </div>
                     <div>
                       <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                        SERA Coaching Context
+                        Opal Coaching Context
                         <span className="flex items-center gap-1 text-xs font-normal text-orange-700 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded-full">
                           <Lock className="w-3 h-3" /> Internal only — not visible to employees
                         </span>
                       </h4>
                       <p className="text-xs text-gray-500 mt-0.5">
-                        Richer context for SERA to use when career coaching, recommending pathways, and guiding progression conversations.
+                        Richer context for Opal to use when career coaching, recommending pathways, and guiding progression conversations.
                       </p>
                     </div>
                   </div>

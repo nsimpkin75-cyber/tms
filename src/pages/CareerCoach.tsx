@@ -246,14 +246,14 @@ export default function CareerCoach({ onNavigate }: CareerCoachProps = {}) {
 
       setMessages([{
         role: 'assistant',
-        content: `Hi ${profile?.full_name?.split(' ')[0] || 'there'}! I'm SERA, your AI Career Coach.${pathwayInfo}${perfInfo}\n\nI'm here to give you specific guidance based on your actual role profile and pathway data — not generic advice. What would you like to explore today?`,
+        content: `Hi ${profile?.full_name?.split(' ')[0] || 'there'}! I'm Opal, your AI Growth Guide.${pathwayInfo}${perfInfo}\n\nI'm here to give you specific guidance based on your actual role profile and pathway data — not generic advice. What would you like to explore today?`,
         timestamp: new Date(),
       }]);
     } catch (err) {
       console.error('Error loading career context:', err);
       setMessages([{
         role: 'assistant',
-        content: `Hi ${profile?.full_name?.split(' ')[0] || 'there'}! I'm SERA, your AI Career Coach. I'm here to help you plan your career progression. What would you like to explore?`,
+        content: `Hi ${profile?.full_name?.split(' ')[0] || 'there'}! I'm Opal, your AI Growth Guide. I'm here to help you plan your career progression. What would you like to explore?`,
         timestamp: new Date(),
       }]);
     } finally {
@@ -401,7 +401,7 @@ export default function CareerCoach({ onNavigate }: CareerCoachProps = {}) {
             </div>
             <div>
               <h1 className="text-2xl font-bold">AI Career Coach</h1>
-              <p className="text-teal-100 text-sm mt-0.5">Powered by SERA · Grounded in your actual pathway data</p>
+              <p className="text-teal-100 text-sm mt-0.5">Powered by Opal · Grounded in your actual pathway data</p>
             </div>
           </div>
         </div>
@@ -429,7 +429,7 @@ export default function CareerCoach({ onNavigate }: CareerCoachProps = {}) {
                         {message.role === 'assistant' && (
                           <div className="flex items-center gap-1.5 mb-2">
                             <Sparkles className="w-3.5 h-3.5 text-teal-600" />
-                            <span className="text-xs font-semibold text-teal-600">SERA</span>
+                            <span className="text-xs font-semibold text-teal-600">Opal</span>
                           </div>
                         )}
                         <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
@@ -459,7 +459,7 @@ export default function CareerCoach({ onNavigate }: CareerCoachProps = {}) {
                       <div className="bg-white border border-gray-200 rounded-xl px-4 py-3 shadow-sm">
                         <div className="flex items-center gap-2">
                           <Sparkles className="w-3.5 h-3.5 text-teal-600 animate-pulse" />
-                          <span className="text-sm text-gray-500">SERA is thinking...</span>
+                          <span className="text-sm text-gray-500">Opal is thinking...</span>
                         </div>
                       </div>
                     </div>

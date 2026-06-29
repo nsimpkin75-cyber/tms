@@ -366,7 +366,7 @@ export default function AICareerQuiz({ onNavigate }: AICareerQuizProps = {}) {
     return {
       overall,
       criteria,
-      caveat: 'SERA does not have access to your full HR file. This guidance assumes there are no live conduct issues, warnings or pending investigations.',
+      caveat: 'Opal does not have access to your full HR file. This guidance assumes there are no live conduct issues, warnings or pending investigations.',
     };
   };
 
@@ -573,7 +573,7 @@ export default function AICareerQuiz({ onNavigate }: AICareerQuizProps = {}) {
           .update({ status: 'sent_to_manager', sent_to_manager_at: new Date().toISOString() })
           .eq('id', existing.id);
 
-        // Seed SERA recommendations as pre-populated actions
+        // Seed Opal recommendations as pre-populated actions
         const actionInserts = recommendations.filter(r => r.type !== 'alternative_role').map(r => ({
           plan_id: existing.id,
           title: r.title,
@@ -714,7 +714,7 @@ export default function AICareerQuiz({ onNavigate }: AICareerQuizProps = {}) {
         <Brain className="w-7 h-7 text-teal-600" />
         <h2 className="text-xl font-bold text-gray-900">Step 2: Reality Check</h2>
       </div>
-      <p className="text-gray-600 text-sm">SERA has pulled your profile data below. You can expand any section to add context, but your profile data will not be changed.</p>
+      <p className="text-gray-600 text-sm">Opal has pulled your profile data below. You can expand any section to add context, but your profile data will not be changed.</p>
 
       {/* Live profile data */}
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 space-y-4">
@@ -808,7 +808,7 @@ export default function AICareerQuiz({ onNavigate }: AICareerQuizProps = {}) {
             <textarea
               value={extraContext}
               onChange={e => setExtraContext(e.target.value)}
-              placeholder="Anything else SERA should know about your situation, motivations or constraints..."
+              placeholder="Anything else Opal should know about your situation, motivations or constraints..."
               rows={2}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
             />
@@ -843,7 +843,7 @@ export default function AICareerQuiz({ onNavigate }: AICareerQuizProps = {}) {
         <p className="text-gray-600 text-sm">Rate yourself honestly against each skill required for <strong>{selectedPathway?.title}</strong>.</p>
         <div className="bg-teal-50 border border-teal-200 rounded-lg p-3">
           <p className="text-sm text-teal-800">
-            <span className="font-semibold">Be honest with yourself.</span> This is not a pass or fail. Your answers help SERA build the right development plan and recommend the right next steps.
+            <span className="font-semibold">Be honest with yourself.</span> This is not a pass or fail. Your answers help Opal build the right development plan and recommend the right next steps.
           </p>
         </div>
 
@@ -949,7 +949,7 @@ export default function AICareerQuiz({ onNavigate }: AICareerQuizProps = {}) {
               <div>
                 <div className={`font-semibold text-sm ${
                   overallColor === 'green' ? 'text-green-900' : overallColor === 'amber' ? 'text-amber-900' : 'text-red-900'
-                }`}>SERA Readiness Check: {overallLabel}</div>
+                }`}>Opal Readiness Check: {overallLabel}</div>
                 <div className="text-xs text-gray-500 mt-0.5">{result.overall === 'ready' ? 'You appear to meet the criteria to explore this pathway.' : 'Some criteria are not currently met — see details below.'}</div>
               </div>
             </div>
@@ -977,12 +977,12 @@ export default function AICareerQuiz({ onNavigate }: AICareerQuizProps = {}) {
           )}
         </div>
 
-        {/* SERA Recommendations */}
+        {/* Opal Recommendations */}
         {recs.length > 0 && (
           <div className="space-y-3">
             <h3 className="font-semibold text-gray-900 flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-teal-600" />
-              SERA Recommendations
+              Opal Recommendations
             </h3>
             {recs.map((rec, i) => {
               const icon = rec.type === 'skill' ? '🎯' : rec.type === 'training' ? '📚' : rec.type === 'alternative_role' ? '🔀' : '✅';
@@ -1084,7 +1084,7 @@ export default function AICareerQuiz({ onNavigate }: AICareerQuizProps = {}) {
             </button>
           )}
           <h1 className="text-2xl font-bold">AI Career Planning Quiz</h1>
-          <p className="text-blue-100 text-sm mt-1">Powered by SERA · Based on your actual pathway and profile data</p>
+          <p className="text-blue-100 text-sm mt-1">Powered by Opal · Based on your actual pathway and profile data</p>
         </div>
 
         {/* Progress bar */}

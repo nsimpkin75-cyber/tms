@@ -984,7 +984,7 @@ ${careerProfile.career_goals || 'Not specified'}
             <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center"><Target className="w-4 h-4 text-blue-600" /></div>
             <div>
               <h3 className="font-semibold text-gray-900">Career Interests & Goals</h3>
-              <p className="text-xs text-gray-400">Used by SERA to support career coaching and the AI Career Quiz</p>
+              <p className="text-xs text-gray-400">Used by Opal to support career coaching and the AI Career Quiz</p>
             </div>
           </div>
           <div className="p-6">
@@ -1175,7 +1175,7 @@ ${careerProfile.career_goals || 'Not specified'}
               className="flex items-center gap-2 px-5 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 font-semibold text-sm"
             >
               <MessageSquare className="w-4 h-4" />
-              Talk to SERA
+              Talk to Opal
             </button>
           </div>
         </div>

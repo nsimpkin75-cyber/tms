@@ -83,7 +83,7 @@ const PERMISSION_GROUPS: PermissionGroup[] = [
       { key: 'manage_users', label: 'User management', description: 'Create, edit and deactivate users' },
       { key: 'manage_org_settings', label: 'Organisation settings', description: 'Edit organisation settings, departments and job titles' },
       { key: 'manage_access_levels', label: 'Access level management', description: 'Create, edit and delete access level types' },
-      { key: 'manage_sera', label: 'SERA configuration', description: 'Configure SERA AI settings and thresholds' },
+      { key: 'manage_sera', label: 'Opal configuration', description: 'Configure Opal AI settings and thresholds' },
       { key: 'full_admin', label: 'Full Admin (unrestricted)', description: 'Grants all permissions. Reserved for Full Admin only.' },
     ],
   },

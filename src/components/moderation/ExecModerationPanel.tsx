@@ -494,11 +494,11 @@ export default function ExecModerationPanel({ readOnly = false }: ExecModeration
 
                 {isExpanded && (
                   <div className="border-t border-slate-100 p-4 space-y-4 bg-slate-50/40">
-                    {/* SERA summary */}
+                    {/* Opal summary */}
                     {c.ai_summary && (
                       <div className="bg-sky-50 border border-sky-200 rounded-xl p-4">
                         <p className="text-xs font-semibold text-sky-700 mb-1.5 flex items-center gap-1.5">
-                          <Sparkles className="w-3.5 h-3.5" /> SERA Moderation Guidance
+                          <Sparkles className="w-3.5 h-3.5" /> Opal Moderation Guidance
                         </p>
                         <p className="text-sm text-sky-900">{c.ai_summary}</p>
                       </div>

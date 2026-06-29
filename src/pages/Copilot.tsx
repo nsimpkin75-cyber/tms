@@ -49,7 +49,7 @@ export function Copilot({ onNavigate }: CopilotProps) {
     {
       role: 'assistant',
       content:
-        "Hello! I'm SERA, your AI career assistant. I can help you with questions about career progression, skills development, and opportunities within the organisation. Ready to plan your career? Take the AI Career Quiz to get personalized recommendations. What would you like to know?",
+        "Hello! I'm Opal, your AI Growth Guide. I can help you with questions about career progression, skills development, and opportunities within the organisation. Ready to plan your career? Take the AI Career Quiz to get personalised recommendations. What would you like to know?",
     },
   ]);
 
@@ -281,7 +281,7 @@ export function Copilot({ onNavigate }: CopilotProps) {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">SERA Career Assessment</h1>
+          <h1 className="text-3xl font-bold text-slate-900">Opal Career Assessment</h1>
           <p className="text-slate-600 mt-2">Let's evaluate your readiness for the next step</p>
         </div>
 
@@ -559,8 +559,8 @@ export function Copilot({ onNavigate }: CopilotProps) {
   return (
     <div className="space-y-6 h-full flex flex-col">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900">SERA</h1>
-        <p className="text-slate-600 mt-2">Your AI-powered career assistant</p>
+        <h1 className="text-3xl font-bold text-slate-900">Opal</h1>
+        <p className="text-slate-600 mt-2">Your AI Growth Guide</p>
       </div>
 
       {availableFunctions.length > 0 && (
@@ -633,7 +633,7 @@ export function Copilot({ onNavigate }: CopilotProps) {
           <div className="flex-1">
             <h3 className="text-lg font-semibold text-purple-900 mb-2">AI Career Planning Quiz</h3>
             <p className="text-purple-800 mb-4">
-              Take the comprehensive 4-step AI Career Quiz to plan your career journey. SERA will analyze your current skills, identify gaps, recommend learning pathways, and help you create an action plan to achieve your career goals.
+              Take the comprehensive 4-step AI Career Quiz to plan your career journey. Opal will analyse your current skills, identify gaps, recommend learning pathways, and help you create an action plan to achieve your career goals.
             </p>
             <button
               onClick={() => onNavigate?.('/career-quiz')}

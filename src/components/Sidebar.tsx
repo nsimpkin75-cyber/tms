@@ -33,7 +33,7 @@ export function Sidebar({ currentPath, onNavigate }: SidebarProps) {
     { icon: Award, label: 'Competencies', path: '/competencies' },
     { icon: Users, label: 'Skills Matrix', path: '/skills-matrix' },
     { icon: Calendar, label: 'Training', path: '/training' },
-    { icon: MessageSquare, label: 'SERA', path: '/marti' },
+    { icon: MessageSquare, label: 'Opal', path: '/marti' },
   ];
 
   const roadmapNavItem = { icon: Map, label: 'Strategies', path: '/strategies' };
@@ -68,7 +68,7 @@ export function Sidebar({ currentPath, onNavigate }: SidebarProps) {
               </div>
               <div className="flex-1 min-w-0">
                 <h2 className="text-white font-semibold truncate">Epos Now</h2>
-                <p className="text-slate-400 text-xs truncate">Futures</p>
+                <p className="text-slate-400 text-xs truncate">Evolo</p>
               </div>
             </>
           )}

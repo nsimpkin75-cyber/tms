@@ -304,7 +304,7 @@ export default function InitiatedCareerPlanQuiz({ planId, onClose, onComplete }:
     return {
       overall,
       criteria,
-      caveat: 'SERA does not have access to your full HR file. This guidance assumes there are no live conduct issues, warnings or pending investigations.',
+      caveat: 'Opal does not have access to your full HR file. This guidance assumes there are no live conduct issues, warnings or pending investigations.',
     };
   };
 
@@ -371,7 +371,7 @@ export default function InitiatedCareerPlanQuiz({ planId, onClose, onComplete }:
         sent_to_manager_at: new Date().toISOString(),
       }).eq('id', planId);
 
-      // Seed SERA recommendations as actions
+      // Seed Opal recommendations as actions
       const actionInserts = finalRecs
         .filter(r => r.type !== 'alternative_role')
         .map(r => ({
@@ -456,7 +456,7 @@ export default function InitiatedCareerPlanQuiz({ planId, onClose, onComplete }:
         </div>
       )}
 
-      <p className="text-gray-600 text-sm">SERA has pulled your profile data below. Add context to strengthen your plan.</p>
+      <p className="text-gray-600 text-sm">Opal has pulled your profile data below. Add context to strengthen your plan.</p>
 
       {/* Live profile data */}
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 space-y-4">
@@ -515,7 +515,7 @@ export default function InitiatedCareerPlanQuiz({ planId, onClose, onComplete }:
         {[
           { label: 'Additional Qualifications', value: extraQualifications, setter: setExtraQualifications, placeholder: 'Any external certifications, degrees or training not in your profile...' },
           { label: 'Relevant Experience', value: extraExperience, setter: setExtraExperience, placeholder: 'Previous roles, projects or responsibilities relevant to your target role...' },
-          { label: 'Additional Context', value: extraContext, setter: setExtraContext, placeholder: 'Anything else SERA should know about your situation or motivations...' },
+          { label: 'Additional Context', value: extraContext, setter: setExtraContext, placeholder: 'Anything else Opal should know about your situation or motivations...' },
         ].map(({ label, value, setter, placeholder }) => (
           <div key={label} className="border border-gray-200 rounded-lg bg-white px-4 py-3">
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -558,7 +558,7 @@ export default function InitiatedCareerPlanQuiz({ planId, onClose, onComplete }:
         <p className="text-gray-600 text-sm">Rate yourself honestly against each skill required for <strong>{targetPathway?.title}</strong>.</p>
         <div className="bg-teal-50 border border-teal-200 rounded-lg p-3">
           <p className="text-sm text-teal-800">
-            <span className="font-semibold">Be honest with yourself.</span> This is not a pass or fail. Your answers help SERA build the right development plan.
+            <span className="font-semibold">Be honest with yourself.</span> This is not a pass or fail. Your answers help Opal build the right development plan.
           </p>
         </div>
         <div className="space-y-3">
@@ -615,7 +615,7 @@ export default function InitiatedCareerPlanQuiz({ planId, onClose, onComplete }:
       <div className="space-y-6">
         <div className="flex items-center gap-3 mb-2">
           <Sparkles className="w-7 h-7 text-blue-600" />
-          <h2 className="text-xl font-bold text-gray-900">Step 3: SERA Summary</h2>
+          <h2 className="text-xl font-bold text-gray-900">Step 3: Opal Summary</h2>
         </div>
 
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
@@ -633,7 +633,7 @@ export default function InitiatedCareerPlanQuiz({ planId, onClose, onComplete }:
               {result.overall === 'ready' ? <CheckCircle className="w-5 h-5 text-green-600" /> : <AlertCircle className={`w-5 h-5 ${overallColor === 'amber' ? 'text-amber-600' : 'text-red-600'}`} />}
               <div>
                 <div className={`font-semibold text-sm ${overallColor === 'green' ? 'text-green-900' : overallColor === 'amber' ? 'text-amber-900' : 'text-red-900'}`}>
-                  SERA Readiness: {overallLabel}
+                  Opal Readiness: {overallLabel}
                 </div>
                 <div className="text-xs text-gray-500 mt-0.5">
                   {result.overall === 'ready' ? 'You appear to meet the criteria to explore this pathway.' : 'Some criteria are not currently met — see details below.'}
@@ -662,7 +662,7 @@ export default function InitiatedCareerPlanQuiz({ planId, onClose, onComplete }:
           <div className="space-y-3">
             <h3 className="font-semibold text-gray-900 flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-teal-600" />
-              SERA Recommendations
+              Opal Recommendations
             </h3>
             {recs.map((rec, i) => {
               const bg = rec.type === 'alternative_role' ? 'bg-blue-50 border-blue-200' : rec.type === 'skill' ? 'bg-amber-50 border-amber-200' : 'bg-green-50 border-green-200';
@@ -692,7 +692,7 @@ export default function InitiatedCareerPlanQuiz({ planId, onClose, onComplete }:
               <div>
                 <div className="text-sm font-semibold text-blue-900">What happens next?</div>
                 <div className="text-xs text-blue-700 mt-0.5">
-                  Your SERA assessment will be sent to {initiatorName}. They will review it and add a Way Forward — objectives, actions, and a development timeline. You'll be notified when that's complete.
+                  Your Opal assessment will be sent to {initiatorName}. They will review it and add a Way Forward — objectives, actions, and a development timeline. You'll be notified when that's complete.
                 </div>
               </div>
             </div>
@@ -746,7 +746,7 @@ export default function InitiatedCareerPlanQuiz({ planId, onClose, onComplete }:
             <X className="w-5 h-5" />
           </button>
           <h1 className="text-2xl font-bold">Career Plan — Your Input</h1>
-          <p className="text-teal-100 text-sm mt-1">Complete your self-assessment · Powered by SERA</p>
+          <p className="text-teal-100 text-sm mt-1">Complete your self-assessment · Powered by Opal</p>
         </div>
 
         {/* Progress */}

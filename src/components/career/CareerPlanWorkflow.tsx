@@ -64,7 +64,7 @@ interface CareerPlanWorkflowProps {
 }
 
 const SOURCE_LABELS: Record<string, string> = {
-  sera: 'SERA',
+  sera: 'Opal',
   manager: 'Manager',
   employee: 'Employee',
   dept_lead: 'Dept Lead',
@@ -994,7 +994,7 @@ export function CareerPlanWorkflow({ planId, viewerRole, onClose }: CareerPlanWo
             }`}>
               <div className="flex items-center gap-2 mb-2">
                 <Sparkles className="w-4 h-4 text-teal-600" />
-                <span className="text-xs font-semibold text-gray-700">SERA Readiness</span>
+                <span className="text-xs font-semibold text-gray-700">Opal Readiness</span>
               </div>
               <div className={`text-sm font-medium ${
                 readiness.overall === 'ready' ? 'text-green-800' :

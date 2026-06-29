@@ -358,7 +358,7 @@ export default function ModerationReviewPanel() {
                       <div className="p-4 bg-sky-50 border border-sky-200 rounded-lg">
                         <div className="flex items-center gap-2 mb-2">
                           <Sparkles className="w-4 h-4 text-sky-600" />
-                          <p className="text-xs font-semibold text-sky-700 uppercase tracking-wide">SERA Summary for Approvers</p>
+                          <p className="text-xs font-semibold text-sky-700 uppercase tracking-wide">Opal Summary for Approvers</p>
                         </div>
                         <p className="text-sm text-sky-900">{c.ai_summary}</p>
                       </div>

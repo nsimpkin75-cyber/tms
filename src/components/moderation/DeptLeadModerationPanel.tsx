@@ -226,7 +226,7 @@ export default function DeptLeadModerationPanel({ department, readOnly = false }
           whatGreatLooksLike: vr.what_great_looks_like || '',
           employeeName,
           managerComments: justification,
-          seraSystemPrompt: `You are SERA, an AI coaching assistant reviewing a Department Lead's moderation decision. The DL has adjusted a competency rating. Coach the justification to ensure it is clear, evidence-based, and professional. Be supportive and constructive. Keep feedback to 1-2 sentences.`,
+          seraSystemPrompt: `You are Opal, an AI coaching assistant reviewing a Department Lead's moderation decision. The DL has adjusted a competency rating. Coach the justification to ensure it is clear, evidence-based, and professional. Be supportive and constructive. Keep feedback to 1-2 sentences.`,
         }),
       });
       if (res.ok) {
@@ -529,11 +529,11 @@ export default function DeptLeadModerationPanel({ department, readOnly = false }
                           </div>
                         )}
 
-                        {/* SERA summary */}
+                        {/* Opal summary */}
                         {c.ai_summary && (
                           <div className="bg-sky-50 border border-sky-200 rounded-xl p-4">
                             <p className="text-xs font-semibold text-sky-700 mb-1.5 flex items-center gap-1.5">
-                              <Sparkles className="w-3.5 h-3.5" /> SERA Recommendation
+                              <Sparkles className="w-3.5 h-3.5" /> Opal Recommendation
                             </p>
                             <p className="text-sm text-sky-900">{c.ai_summary}</p>
                           </div>
@@ -584,11 +584,11 @@ export default function DeptLeadModerationPanel({ department, readOnly = false }
                     {/* ── PENDING CASE VIEW ── */}
                     {isPending && (
                       <>
-                        {/* SERA summary from original submission */}
+                        {/* Opal summary from original submission */}
                         {c.ai_summary && (
                           <div className="bg-sky-50 border border-sky-200 rounded-xl p-4">
                             <p className="text-xs font-semibold text-sky-700 mb-1.5 flex items-center gap-1.5">
-                              <Sparkles className="w-3.5 h-3.5" /> SERA Moderation Guidance
+                              <Sparkles className="w-3.5 h-3.5" /> Opal Moderation Guidance
                             </p>
                             <p className="text-sm text-sky-900">{c.ai_summary}</p>
                           </div>
@@ -746,11 +746,11 @@ export default function DeptLeadModerationPanel({ department, readOnly = false }
                                       />
                                     </div>
 
-                                    {/* SERA coaching for adjustments */}
+                                    {/* Opal coaching for adjustments */}
                                     {localAction.action === 'adjusted' && (localAction.seraValidating || localAction.seraFeedback) && (
                                       <div className="bg-sky-50 border border-sky-200 rounded-lg p-3">
                                         <p className="text-xs font-semibold text-sky-700 mb-1.5 flex items-center gap-1.5">
-                                          <Sparkles className="w-3 h-3" /> SERA Coaching
+                                          <Sparkles className="w-3 h-3" /> Opal Coaching
                                           {localAction.seraValidating && <Loader2 className="w-3 h-3 animate-spin ml-1" />}
                                         </p>
                                         {localAction.seraFeedback && (

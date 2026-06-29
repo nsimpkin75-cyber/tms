@@ -194,7 +194,7 @@ export default function ReviewFlow({
         : prev);
     }
 
-    // Load SERA system prompt
+    // Load Opal system prompt
     supabase.from('copilot_config').select('config_data').eq('is_active', true).maybeSingle().then(({ data }) => {
       if (data?.config_data?.system_prompt) setSeraSystemPrompt(data.config_data.system_prompt);
     });
@@ -505,7 +505,7 @@ export default function ReviewFlow({
     const capturedEmployeeName = employeeFullName;
     const capturedSeraSystemPrompt = seraSystemPrompt;
 
-    setSeraFeedbacks(prev => ({ ...prev, [key]: { type: 'loading', message: 'SERA is evaluating...' } }));
+    setSeraFeedbacks(prev => ({ ...prev, [key]: { type: 'loading', message: 'Opal is evaluating...' } }));
 
     seraTimers.current[key] = setTimeout(async () => {
       try {
@@ -539,12 +539,12 @@ export default function ReviewFlow({
           [key]: { type: isPositive ? 'great' : 'warn', message: data.message || 'Unable to evaluate at this time.' },
         }));
       } catch (err) {
-        console.error('[SERA] Feedback request failed:', err);
+        console.error('[Opal] Feedback request failed:', err);
         const fallbackMsg = capturedRating >= 5
-          ? 'SERA feedback is unavailable. Please ensure level 5 ratings include measurable impact, multiple examples and clear business outcomes.'
+          ? 'Opal feedback is unavailable. Please ensure level 5 ratings include measurable impact, multiple examples and clear business outcomes.'
           : capturedRating === 4
-          ? 'SERA feedback is unavailable. Please ensure this rating is supported by specific evidence and measurable outcomes.'
-          : 'SERA feedback is unavailable. Evidence has been noted — consider adding specific examples for stronger support.';
+          ? 'Opal feedback is unavailable. Please ensure this rating is supported by specific evidence and measurable outcomes.'
+          : 'Opal feedback is unavailable. Evidence has been noted — consider adding specific examples for stronger support.';
         setSeraFeedbacks(prev => ({
           ...prev,
           [key]: { type: capturedRating >= 4 ? 'warn' : 'ok', message: fallbackMsg },
@@ -1287,7 +1287,7 @@ function StepCompetencies({ valueGroups, valuesRatings, updateValuesRating, sera
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold text-gray-900">Step 2: Values & Competencies</h3>
-          <p className="text-sm text-gray-500 mt-0.5">Rate observed behaviours with evidence — SERA coaches as you type</p>
+          <p className="text-sm text-gray-500 mt-0.5">Rate observed behaviours with evidence — Opal coaches as you type</p>
         </div>
         <div className="flex items-center gap-3">
           {compAvg !== undefined && (
@@ -1669,7 +1669,7 @@ function StepActionsComments({
             <Sparkles className="w-5 h-5 text-blue-600" />
             <div>
               <p className="text-sm font-semibold text-gray-900">Manager Summary</p>
-              <p className="text-xs text-gray-400">SERA-assisted — includes KPI avg, competency avg, actions, key points</p>
+              <p className="text-xs text-gray-400">Opal-assisted — includes KPI avg, competency avg, actions, key points</p>
             </div>
           </div>
           {!isSubmitted && (

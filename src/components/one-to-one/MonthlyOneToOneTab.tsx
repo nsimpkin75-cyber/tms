@@ -669,7 +669,7 @@ Write a concise, professional summary in this exact structure:
       const summary = data?.summary || buildFallbackSummary(kpiLines, competencyLines, actionsLines, newActionsLines, kpiAvgVal, overallCompAvg);
       setReview(prev => prev ? { ...prev, sera_draft_summary: summary, manager_summary: summary } : null);
     } catch (error) {
-      console.error('Error generating SERA summary:', error);
+      console.error('Error generating Opal summary:', error);
       const { avg: kpiAvgVal } = computeKpiAvgForSummary();
       const fallback = buildFallbackSummary('', '', '', '', kpiAvgVal, review.overall_competency_average);
       setReview(prev => prev ? { ...prev, sera_draft_summary: fallback, manager_summary: fallback } : null);
@@ -1423,7 +1423,7 @@ Performance for ${month}. KPI average: ${overallKpiAvg !== undefined ? `${overal
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-blue-600" />
             <h4 className="text-base font-semibold text-gray-900">Manager Summary</h4>
-            <span className="text-xs text-gray-400">(SERA-assisted, editable)</span>
+            <span className="text-xs text-gray-400">(Opal-assisted, editable)</span>
           </div>
           {!isSubmitted && (
             <button
