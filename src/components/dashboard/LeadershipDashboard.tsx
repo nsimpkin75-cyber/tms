@@ -1483,15 +1483,6 @@ export function LeadershipDashboard({ onNavigate }: LeadershipDashboardProps = {
           <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Executive Homepage</h1>
           <p className="text-slate-500 mt-1">Organisation-wide talent insights and strategic planning</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => onNavigate?.('/strategies')}
-            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-          >
-            <Target className="w-4 h-4" />
-            Strategies
-          </button>
-        </div>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
