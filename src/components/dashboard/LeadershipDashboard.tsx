@@ -1024,7 +1024,7 @@ export function LeadershipDashboard({ onNavigate }: LeadershipDashboardProps = {
                 <Users className="w-5 h-5 text-blue-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-900">9-Box Talent Grid</h3>
+                <h3 className="font-semibold text-slate-900">Performance Grid</h3>
                 <p className="text-xs text-slate-500">
                   {deptTalentGrid.length} employee{deptTalentGrid.length !== 1 ? 's' : ''} with completed reviews
                   {deptNineBoxManagerId ? ' (filtered by team leader)' : ''}
@@ -1747,7 +1747,7 @@ export function LeadershipDashboard({ onNavigate }: LeadershipDashboardProps = {
             <div className="flex items-center gap-3">
               <div className="p-2.5 bg-blue-100 rounded-lg"><Users className="w-5 h-5 text-blue-600" /></div>
               <div>
-                <h3 className="font-semibold text-slate-900">9-Box Talent Overview</h3>
+                <h3 className="font-semibold text-slate-900">Performance Grid Overview</h3>
                 <p className="text-xs text-slate-500">
                   Performance vs competency — {talentGrid.length} employee{talentGrid.length !== 1 ? 's' : ''} with completed reviews
                 </p>
@@ -1880,7 +1880,7 @@ export function LeadershipDashboard({ onNavigate }: LeadershipDashboardProps = {
         <div className="card">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="font-semibold text-slate-900 text-lg">Full 9-Box Grid</h3>
+              <h3 className="font-semibold text-slate-900 text-lg">Full Performance Grid</h3>
               <p className="text-xs text-slate-500 mt-0.5">
                 {talentGrid.length} employee{talentGrid.length !== 1 ? 's' : ''} with completed reviews{hasActiveNineBoxFilters ? ' (filtered)' : ''}
               </p>

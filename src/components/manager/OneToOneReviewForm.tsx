@@ -750,7 +750,7 @@ export function OneToOneReviewForm({
                   <li>Employee self-assessment</li>
                   <li>Gap analysis between current and target performance</li>
                   <li>Recommended learning path</li>
-                  <li>9-box grid positioning</li>
+                  <li>Performance Grid positioning</li>
                 </ul>
               </div>
             </div>

@@ -1034,7 +1034,7 @@ export function ManagerDashboard({ onNavigate }: ManagerDashboardProps = {}) {
           </div>
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <Target className="w-10 h-10 text-slate-300 mb-3" />
-            <p className="text-sm font-medium text-slate-500">No 9-box data available</p>
+            <p className="text-sm font-medium text-slate-500">No Performance Grid data available</p>
             <p className="text-xs text-slate-400 mt-1">Performance and potential ratings are required to populate this view</p>
           </div>
         </div>

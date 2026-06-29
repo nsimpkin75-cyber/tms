@@ -74,7 +74,7 @@ const PERMISSION_GROUPS: PermissionGroup[] = [
     items: [
       { key: 'view_team', label: 'Team views', description: "View team members and direct reports" },
       { key: 'view_reporting', label: 'Reporting dashboards', description: 'Access reporting and analytics dashboards' },
-      { key: 'view_nine_box', label: '9-box grid', description: 'View the 9-box talent grid' },
+      { key: 'view_nine_box', label: 'Performance Grid', description: 'View the Performance Grid' },
     ],
   },
   {
