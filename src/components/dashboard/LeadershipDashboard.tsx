@@ -2215,11 +2215,11 @@ function OtoDrawer({ items, status, onClose }: {
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
         </div>
-        <div className="overflow-y-auto flex-1">
+        <div className="overflow-y-auto overflow-x-auto flex-1">
           {filtered.length === 0 ? (
             <p className="text-center text-slate-400 py-12 text-sm">No records in this category</p>
           ) : (
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-[500px]">
               <thead className="sticky top-0 bg-slate-50 border-b">
                 <tr>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500">Employee</th>

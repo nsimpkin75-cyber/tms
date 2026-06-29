@@ -313,7 +313,7 @@ export function EmployeeDashboard({ onNavigate }: EmployeeDashboardProps = {}) {
       {pendingInputPlans.length > 0 && (
         <div className="space-y-2">
           {pendingInputPlans.map(plan => (
-            <div key={plan.id} className="bg-teal-50 border border-teal-300 rounded-xl p-4 flex items-center justify-between gap-4 shadow-sm">
+            <div key={plan.id} className="bg-teal-50 border border-teal-300 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
               <div className="flex items-start gap-3">
                 <div className="p-2 bg-teal-100 rounded-lg flex-shrink-0 mt-0.5">
                   <Target className="w-4 h-4 text-teal-600" />
@@ -366,7 +366,7 @@ export function EmployeeDashboard({ onNavigate }: EmployeeDashboardProps = {}) {
       </div>
 
       {/* KPI metric cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4">
         {/* Next 1:1 */}
         <div className="card p-5 flex flex-col gap-3">
           <div className="flex items-center justify-between">
@@ -536,7 +536,7 @@ export function EmployeeDashboard({ onNavigate }: EmployeeDashboardProps = {}) {
               <p className="text-xs text-slate-500">From your most recent completed check-in</p>
             </div>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
             {kpiRatings.map((kpi, i) => (
               <div key={i} className="bg-gray-50 rounded-xl p-3 border border-gray-100">
                 <p className="text-xs font-medium text-gray-600 mb-1 truncate">{kpi.kpi_name}</p>

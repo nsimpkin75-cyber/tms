@@ -87,21 +87,23 @@ export function Dashboard({ onNavigate }: DashboardProps = {}) {
 
   return (
     <div>
-      <div className="flex gap-1 mb-6 bg-gray-100 rounded-xl p-1 w-fit">
-        {tabs.map(tab => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
-              activeTab === tab
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700 hover:bg-white/60'
-            }`}
-          >
-            {TAB_META[tab].icon}
-            {TAB_META[tab].label}
-          </button>
-        ))}
+      <div className="mb-6 overflow-x-auto -mx-4 px-4 lg:mx-0 lg:px-0">
+        <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit min-w-max">
+          {tabs.map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                activeTab === tab
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-white/60'
+              }`}
+            >
+              {TAB_META[tab].icon}
+              {TAB_META[tab].label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {activeTab === 'employee' && <EmployeeDashboard onNavigate={onNavigate} />}

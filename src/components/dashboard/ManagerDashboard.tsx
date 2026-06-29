@@ -663,7 +663,7 @@ export function ManagerDashboard({ onNavigate }: ManagerDashboardProps = {}) {
       {pendingWayForwardPlans.length > 0 && (
         <div className="space-y-2">
           {pendingWayForwardPlans.map(plan => (
-            <div key={plan.id} className="bg-blue-50 border border-blue-300 rounded-xl p-4 flex items-center justify-between gap-4 shadow-sm">
+            <div key={plan.id} className="bg-blue-50 border border-blue-300 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
               <div className="flex items-start gap-3">
                 <div className="p-2 bg-blue-100 rounded-lg flex-shrink-0 mt-0.5">
                   <Target className="w-4 h-4 text-blue-600" />
@@ -691,7 +691,7 @@ export function ManagerDashboard({ onNavigate }: ManagerDashboardProps = {}) {
       {pendingConfirmationPlans.length > 0 && (
         <div className="space-y-2">
           {pendingConfirmationPlans.map(plan => (
-            <div key={plan.id} className="bg-sky-50 border border-sky-300 rounded-xl p-4 flex items-center justify-between gap-4 shadow-sm">
+            <div key={plan.id} className="bg-sky-50 border border-sky-300 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
               <div className="flex items-start gap-3">
                 <div className="p-2 bg-sky-100 rounded-lg flex-shrink-0 mt-0.5">
                   <Target className="w-4 h-4 text-sky-600" />
@@ -738,7 +738,7 @@ export function ManagerDashboard({ onNavigate }: ManagerDashboardProps = {}) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
         <div className="card p-5 flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Team Size</p>
@@ -1353,7 +1353,7 @@ export function ManagerDashboard({ onNavigate }: ManagerDashboardProps = {}) {
                     <p className="text-sm font-medium text-slate-900 truncate">{member.full_name}</p>
                     <p className="text-xs text-slate-500 truncate">{member.job_title || member.department || ''}</p>
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-shrink-0">
                     <span className={`text-xs px-2 py-1 rounded-full font-medium ${statusColors[plan.status] || 'bg-slate-100 text-slate-600'}`}>
                       {statusLabels[plan.status] || plan.status}
                     </span>

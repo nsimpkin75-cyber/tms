@@ -91,21 +91,21 @@ function AppContent() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-100">
       {isViewingAs && viewAsProfile && (
-        <div className="bg-orange-600 text-white px-6 py-3 flex items-center justify-between shadow-lg z-50">
-          <div className="flex items-center gap-3">
-            <div className="bg-white text-orange-600 px-3 py-1 rounded font-bold text-sm">
+        <div className="bg-orange-600 text-white px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3 justify-between shadow-lg z-50">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="bg-white text-orange-600 px-3 py-1 rounded font-bold text-sm shrink-0">
               VIEW-AS MODE
             </div>
-            <span className="font-medium">
+            <span className="font-medium text-sm">
               Viewing as: <strong>{viewAsProfile.full_name}</strong> ({viewAsProfile.email})
             </span>
-            <span className="text-orange-200 text-sm">
+            <span className="text-orange-200 text-xs hidden sm:inline">
               You cannot approve or amend data in this mode
             </span>
           </div>
           <button
             onClick={handleExitViewAs}
-            className="bg-white text-orange-600 px-4 py-2 rounded font-semibold hover:bg-orange-50 transition-colors"
+            className="bg-white text-orange-600 px-4 py-2 rounded font-semibold hover:bg-orange-50 transition-colors text-sm self-start sm:self-center shrink-0"
           >
             Exit View-As Mode
           </button>
@@ -117,10 +117,10 @@ function AppContent() {
           View As mode is read-only. No changes can be made.
         </div>
       )}
-      <div className="flex flex-1">
+      <div className="flex flex-1 min-h-0">
         <Sidebar currentPath={currentPath} onNavigate={setCurrentPath} />
-        <main className="flex-1 overflow-y-auto">
-          <div className="max-w-7xl mx-auto p-6 lg:p-8">{renderPage()}</div>
+        <main className="flex-1 overflow-y-auto overflow-x-hidden min-w-0">
+          <div className="max-w-7xl mx-auto px-4 pt-16 pb-6 lg:pt-8 lg:px-8">{renderPage()}</div>
         </main>
       </div>
     </div>
