@@ -1,5 +1,5 @@
-import { useEffect, useState, useRef } from 'react';
-import { Users, TrendingUp, Calendar, BarChart3, AlertCircle, CheckCircle2, Target, Award, Star, FileText, ShieldCheck, Clock, MessageSquare, Send, X, ChevronDown, ChevronUp, ClipboardCheck } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Users, TrendingUp, Calendar, BarChart3, AlertCircle, CheckCircle2, Target, Award, Star, FileText, ShieldCheck, Clock, X, ChevronDown, ChevronUp, ClipboardCheck } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase, Profile } from '../../lib/supabase';
@@ -11,6 +11,7 @@ import ModerationReviewPanel from '../moderation/ModerationReviewPanel';
 import DeptLeadModerationPanel from '../moderation/DeptLeadModerationPanel';
 import CreateCareerPlanModal from '../manager/CreateCareerPlanModal';
 import { CareerPlanWorkflow } from '../career/CareerPlanWorkflow';
+import OpalWidget from './OpalWidget';
 
 interface TeamMember extends Profile {}
 
@@ -93,9 +94,6 @@ export function ManagerDashboard({ onNavigate }: ManagerDashboardProps = {}) {
   const [completedRecentReviews, setCompletedRecentReviews] = useState<ReviewStatusItem[]>([]);
   const [dueSoonReviews, setDueSoonReviews] = useState<ReviewStatusItem[]>([]);
   const [activeStatusFilter, setActiveStatusFilter] = useState<'missed'|'overdue'|'in_progress'|'completed'|'due_soon'|null>(null);
-  const [seraQuery, setSeraQuery] = useState('');
-  const [seraResponse, setSeraResponse] = useState('');
-  const seraInputRef = useRef<HTMLInputElement>(null);
   const [moderationNotifications, setModerationNotifications] = useState<any[]>([]);
   const [moderationOutcomes, setModerationOutcomes] = useState<ModerationOutcome[]>([]);
   const [expandedModerationId, setExpandedModerationId] = useState<string | null>(null);
@@ -106,6 +104,34 @@ export function ManagerDashboard({ onNavigate }: ManagerDashboardProps = {}) {
   const [pendingConfirmationPlans, setPendingConfirmationPlans] = useState<{ id: string; plan_title: string | null; goal_role_title: string | null; goal_role_custom_title: string | null; employee_name: string }[]>([]);
   const [confirmationPlanId, setConfirmationPlanId] = useState<string | null>(null);
   const [careerSignOffActions, setCareerSignOffActions] = useState<{ id: string; title: string; plan_id: string; due_date: string | null; employee_name: string; plan_title: string }[]>([]);
+
+  function answerManagerQuery(q: string): string {
+    const ql = q.toLowerCase();
+    const now = new Date();
+    if (ql.includes('action') || ql.includes('outstanding')) {
+      const overdue = myActions.filter(a => a.due_date && new Date(a.due_date) < now).length;
+      return `You have ${myActions.length} open action${myActions.length !== 1 ? 's' : ''}${overdue > 0 ? `, ${overdue} overdue` : ''}.`;
+    }
+    if ((ql.includes('this week') || ql.includes('upcoming')) && ql.includes('1:1')) {
+      return `${dueSoonReviews.length} 1:1${dueSoonReviews.length !== 1 ? 's are' : ' is'} due in the next 7 days.`;
+    }
+    if (ql.includes('overdue')) {
+      return `${overdueReviews.length} review${overdueReviews.length !== 1 ? 's are' : ' is'} overdue.`;
+    }
+    if (ql.includes('missed')) {
+      return `${missedReviews.length} review${missedReviews.length !== 1 ? 's were' : ' was'} missed.`;
+    }
+    if (ql.includes('in progress')) {
+      return `${inProgressReviews.length} review${inProgressReviews.length !== 1 ? 's are' : ' is'} in progress.`;
+    }
+    if (ql.includes('team') || ql.includes('direct report') || ql.includes('headcount')) {
+      return `Your team has ${teamMembers.length} direct report${teamMembers.length !== 1 ? 's' : ''}.`;
+    }
+    if (ql.includes('complet')) {
+      return `${completedRecentReviews.length} review${completedRecentReviews.length !== 1 ? 's have' : ' has'} been completed.`;
+    }
+    return 'I can answer questions about your actions, 1:1 schedule, overdue or missed reviews, and team size.';
+  }
 
   useEffect(() => {
     if (profile) {
@@ -1398,82 +1424,12 @@ export function ManagerDashboard({ onNavigate }: ManagerDashboardProps = {}) {
       </div>
 
       {/* Lightweight Opal widget */}
-      <div className="card border border-sky-100 bg-sky-50/50">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="p-2 bg-sky-100 rounded-lg"><MessageSquare className="w-4 h-4 text-sky-600" /></div>
-          <div>
-            <h3 className="font-semibold text-slate-900 text-sm">Opal — Ask about your team</h3>
-            <p className="text-xs text-slate-500">Try: "What are my outstanding actions?", "How many 1:1s this week?", "Which reviews are overdue?"</p>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <input
-            ref={seraInputRef}
-            type="text"
-            value={seraQuery}
-            onChange={e => setSeraQuery(e.target.value)}
-            onKeyDown={e => {
-              if (e.key !== 'Enter' || !seraQuery.trim()) return;
-              const ql = seraQuery.toLowerCase();
-              let ans = '';
-              if (ql.includes('action') || ql.includes('outstanding')) {
-                ans = `You have ${myActions.length} open action${myActions.length !== 1 ? 's' : ''}.${myActions.filter(a => a.due_date && new Date(a.due_date) < new Date()).length > 0 ? ` ${myActions.filter(a => a.due_date && new Date(a.due_date) < new Date()).length} overdue.` : ''}`;
-              } else if ((ql.includes('this week') || ql.includes('upcoming')) && ql.includes('1:1')) {
-                ans = `${dueSoonReviews.length} 1:1${dueSoonReviews.length !== 1 ? 's are' : ' is'} due in the next 7 days.`;
-              } else if (ql.includes('overdue')) {
-                ans = `${overdueReviews.length} review${overdueReviews.length !== 1 ? 's are' : ' is'} overdue.`;
-              } else if (ql.includes('missed')) {
-                ans = `${missedReviews.length} review${missedReviews.length !== 1 ? 's were' : ' was'} missed.`;
-              } else if (ql.includes('in progress')) {
-                ans = `${inProgressReviews.length} review${inProgressReviews.length !== 1 ? 's are' : ' is'} in progress.`;
-              } else if (ql.includes('team') || ql.includes('direct report')) {
-                ans = `Your team has ${teamMembers.length} direct report${teamMembers.length !== 1 ? 's' : ''}.`;
-              } else if (ql.includes('complet')) {
-                ans = `${completedRecentReviews.length} review${completedRecentReviews.length !== 1 ? 's have' : ' has'} been completed.`;
-              } else {
-                ans = 'I can answer questions about your actions, 1:1 schedule, overdue or missed reviews, and team size.';
-              }
-              setSeraResponse(ans);
-            }}
-            placeholder="Ask about your team..."
-            className="flex-1 px-3 py-2 text-sm border border-sky-200 rounded-lg focus:ring-2 focus:ring-sky-400 focus:outline-none bg-white"
-          />
-          <button
-            onClick={() => {
-              if (!seraQuery.trim()) return;
-              const ql = seraQuery.toLowerCase();
-              let ans = '';
-              if (ql.includes('action') || ql.includes('outstanding')) {
-                ans = `You have ${myActions.length} open action${myActions.length !== 1 ? 's' : ''}.${myActions.filter(a => a.due_date && new Date(a.due_date) < new Date()).length > 0 ? ` ${myActions.filter(a => a.due_date && new Date(a.due_date) < new Date()).length} overdue.` : ''}`;
-              } else if ((ql.includes('this week') || ql.includes('upcoming')) && ql.includes('1:1')) {
-                ans = `${dueSoonReviews.length} 1:1${dueSoonReviews.length !== 1 ? 's are' : ' is'} due in the next 7 days.`;
-              } else if (ql.includes('overdue')) {
-                ans = `${overdueReviews.length} review${overdueReviews.length !== 1 ? 's are' : ' is'} overdue.`;
-              } else if (ql.includes('missed')) {
-                ans = `${missedReviews.length} review${missedReviews.length !== 1 ? 's were' : ' was'} missed.`;
-              } else if (ql.includes('in progress')) {
-                ans = `${inProgressReviews.length} review${inProgressReviews.length !== 1 ? 's are' : ' is'} in progress.`;
-              } else if (ql.includes('team') || ql.includes('direct report')) {
-                ans = `Your team has ${teamMembers.length} direct report${teamMembers.length !== 1 ? 's' : ''}.`;
-              } else if (ql.includes('complet')) {
-                ans = `${completedRecentReviews.length} review${completedRecentReviews.length !== 1 ? 's have' : ' has'} been completed.`;
-              } else {
-                ans = 'I can answer questions about your actions, 1:1 schedule, overdue or missed reviews, and team size.';
-              }
-              setSeraResponse(ans);
-            }}
-            disabled={!seraQuery.trim()}
-            className="px-3 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 disabled:opacity-40 transition-colors"
-          >
-            <Send className="w-4 h-4" />
-          </button>
-        </div>
-        {seraResponse && (
-          <div className="mt-2 p-3 bg-white border border-sky-200 rounded-lg text-sm text-slate-700">
-            {seraResponse}
-          </div>
-        )}
-      </div>
+      <OpalWidget
+        answerFn={answerManagerQuery}
+        title="Opal — Ask about your team"
+        placeholder="Ask about your team..."
+        suggestions='Try: "What are my outstanding actions?", "How many 1:1s this week?", "Which reviews are overdue?"'
+      />
 
       {showCreateCareerPlan && (
         <CreateCareerPlanModal

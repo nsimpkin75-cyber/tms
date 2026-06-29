@@ -1,5 +1,5 @@
-import { useEffect, useState, useMemo, useRef } from 'react';
-import { Building2, TrendingUp, Users, Target, FileText, CheckCircle2, Award, Calendar, Star, AlertCircle, ChevronDown, ChevronUp, ShieldCheck, Filter, X, MessageSquare, Send, Briefcase, PenLine } from 'lucide-react';
+import { useEffect, useState, useMemo } from 'react';
+import { Building2, TrendingUp, Users, Target, FileText, CheckCircle2, Award, Calendar, Star, AlertCircle, ChevronDown, ChevronUp, ShieldCheck, Filter, X, Briefcase, PenLine } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import PayReviewDashboard from '../leadership/PayReviewDashboard';
@@ -8,6 +8,7 @@ import DeptLeadModerationPanel from '../moderation/DeptLeadModerationPanel';
 import ExecModerationPanel from '../moderation/ExecModerationPanel';
 import { CareerPlanWorkflow } from '../career/CareerPlanWorkflow';
 import { computeReviewStatus } from '../../lib/reviewStatus';
+import OpalWidget from './OpalWidget';
 import SmDashboardMatrix from '../skills-matrix/SmDashboardMatrix';
 
 interface TalentGridItem {
@@ -181,11 +182,6 @@ export function LeadershipDashboard({ onNavigate }: LeadershipDashboardProps = {
     employee: { full_name: string; job_title: string | null } | null;
   }>>([]);
   const [selectedDeptPlanId, setSelectedDeptPlanId] = useState<string | null>(null);
-
-  // Lightweight Opal widget
-  const [seraQuery, setSeraQuery] = useState('');
-  const [seraResponse, setSeraResponse] = useState('');
-  const seraInputRef = useRef<HTMLInputElement>(null);
 
   const talentGrid = useMemo(() => {
     return talentGridRaw.filter(emp => {
@@ -1453,7 +1449,12 @@ export function LeadershipDashboard({ onNavigate }: LeadershipDashboardProps = {
         )}
 
         {/* Lightweight Opal widget */}
-        <SeraWidget answerFn={answerSeraQuery} inputRef={seraInputRef} query={seraQuery} setQuery={setSeraQuery} response={seraResponse} setResponse={setSeraResponse} />
+        <OpalWidget
+          answerFn={answerSeraQuery}
+          title="Opal — Ask about your department"
+          placeholder="Ask about 1:1s, career plans, performance..."
+          suggestions='Try: "How many missed 1:1s?", "Show overdue reviews", "How many career plans?"'
+        />
 
         {/* 1:1 Status Drawer */}
         <OtoDrawer items={otoItems} status={otoDrawer} onClose={() => setOtoDrawer(null)} />
@@ -2121,7 +2122,12 @@ export function LeadershipDashboard({ onNavigate }: LeadershipDashboardProps = {
       </div>
 
       {/* Lightweight Opal widget */}
-      <SeraWidget answerFn={answerSeraQuery} inputRef={seraInputRef} query={seraQuery} setQuery={setSeraQuery} response={seraResponse} setResponse={setSeraResponse} />
+      <OpalWidget
+        answerFn={answerSeraQuery}
+        title="Opal — Ask about the organisation"
+        placeholder="Ask about 1:1s, performance, headcount..."
+        suggestions='Try: "How many missed 1:1s?", "Show overdue reviews", "How many career plans?"'
+      />
 
       {/* 1:1 Status Drawer */}
       <OtoDrawer items={otoItems} status={otoDrawer} onClose={() => setOtoDrawer(null)} />
@@ -2130,54 +2136,6 @@ export function LeadershipDashboard({ onNavigate }: LeadershipDashboardProps = {
 }
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
-
-function SeraWidget({ answerFn, inputRef, query, setQuery, response, setResponse }: {
-  answerFn: (q: string) => string;
-  inputRef: React.RefObject<HTMLInputElement>;
-  query: string;
-  setQuery: (v: string) => void;
-  response: string;
-  setResponse: (v: string) => void;
-}) {
-  function handleAsk() {
-    if (!query.trim()) return;
-    setResponse(answerFn(query.trim()));
-  }
-  return (
-    <div className="card border border-sky-100 bg-sky-50/50">
-      <div className="flex items-center gap-3 mb-3">
-        <div className="p-2 bg-sky-100 rounded-lg"><MessageSquare className="w-4 h-4 text-sky-600" /></div>
-        <div>
-          <h3 className="font-semibold text-slate-900 text-sm">Opal — Ask about your dashboard</h3>
-          <p className="text-xs text-slate-500">Try: "How many missed 1:1s?", "Show overdue reviews", "How many career plans?"</p>
-        </div>
-      </div>
-      <div className="flex gap-2">
-        <input
-          ref={inputRef}
-          type="text"
-          value={query}
-          onChange={e => setQuery(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && handleAsk()}
-          placeholder="Ask about 1:1s, performance, headcount..."
-          className="flex-1 px-3 py-2 text-sm border border-sky-200 rounded-lg focus:ring-2 focus:ring-sky-400 focus:outline-none bg-white"
-        />
-        <button
-          onClick={handleAsk}
-          disabled={!query.trim()}
-          className="px-3 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 disabled:opacity-40 transition-colors"
-        >
-          <Send className="w-4 h-4" />
-        </button>
-      </div>
-      {response && (
-        <div className="mt-2 p-3 bg-white border border-sky-200 rounded-lg text-sm text-slate-700">
-          {response}
-        </div>
-      )}
-    </div>
-  );
-}
 
 function reviewStatusToDrawerKey(status: string): string {
   switch (status) {

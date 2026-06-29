@@ -7,6 +7,7 @@ import MyReviews from '../employee/MyReviews';
 import PerformanceTracking from '../employee/PerformanceTracking';
 import SkillsMatrixPanel from '../skills-matrix/SkillsMatrixPanel';
 import InitiatedCareerPlanQuiz from '../career/InitiatedCareerPlanQuiz';
+import OpalWidget from './OpalWidget';
 
 interface EmployeeDashboardProps {
   onNavigate?: (path: string) => void;
@@ -276,6 +277,35 @@ export function EmployeeDashboard({ onNavigate }: EmployeeDashboardProps = {}) {
   const overdueActions = otoActionItems.filter(a => a.due_date && new Date(a.due_date) < new Date());
   const activeCareerPlan = careerPlans.find(p => p.status !== 'completed' && p.status !== 'cancelled');
   const pendingInputPlans = careerPlans.filter(p => p.status === 'pending_employee_input');
+
+  function answerEmployeeQuery(q: string): string {
+    const ql = q.toLowerCase();
+    if (ql.includes('action') || ql.includes('outstanding') || ql.includes('task')) {
+      const overdue = overdueActions.length;
+      const total = otoActionItems.length;
+      return `You have ${total} open action${total !== 1 ? 's' : ''}${overdue > 0 ? `, ${overdue} overdue` : ''}.`;
+    }
+    if (ql.includes('career plan') || ql.includes('goal')) {
+      if (!activeCareerPlan) return 'You have no active career plan. Visit the Career Coach to get started.';
+      return `Your active career plan is "${activeCareerPlan.goal_role_custom_title || activeCareerPlan.goal_role_title}". ${pendingInputPlans.length > 0 ? 'Action required: you have a plan awaiting your input.' : ''}`.trim();
+    }
+    if (ql.includes('meeting') || ql.includes('1:1') || ql.includes('next')) {
+      if (!nextMeeting) return 'No upcoming 1:1 meeting is scheduled.';
+      const label = nextMeeting.isPast ? 'Your last meeting was' : 'Your next meeting is';
+      return `${label} on ${format(new Date(nextMeeting.scheduled_datetime), 'EEE d MMM yyyy')}.`;
+    }
+    if (ql.includes('sign off') || ql.includes('signoff') || ql.includes('approval')) {
+      return careerSignOffActions.length > 0
+        ? `You have ${careerSignOffActions.length} career plan action${careerSignOffActions.length !== 1 ? 's' : ''} awaiting sign-off.`
+        : 'No career plan actions are awaiting sign-off.';
+    }
+    if (ql.includes('performance') || ql.includes('rating') || ql.includes('score')) {
+      return overallAvg !== null
+        ? `Your latest performance score is ${overallAvg.toFixed(1)}/5.`
+        : 'No performance score available yet.';
+    }
+    return 'I can answer questions about your open actions, career plan, next meeting, or performance score. Try asking!';
+  }
 
   function scoreLabel(score: number | null) {
     if (score === null) return '—';
@@ -669,13 +699,19 @@ export function EmployeeDashboard({ onNavigate }: EmployeeDashboardProps = {}) {
       </div>
 
       {/* Opal assistant */}
+      <OpalWidget
+        answerFn={answerEmployeeQuery}
+        title="Opal — Your Growth Guide"
+        placeholder="Ask about your actions, career plan, next meeting..."
+        suggestions='Try: "What actions are due?", "My career plan", "When is my next 1:1?"'
+      />
       <div className="card">
         <div className="flex items-center gap-3 mb-5">
           <div className="p-2.5 bg-sky-100 rounded-lg">
             <MessageSquare className="w-5 h-5 text-sky-600" />
           </div>
           <div>
-            <h3 className="font-semibold text-slate-900">Opal — Your Growth Guide</h3>
+            <h3 className="font-semibold text-slate-900">Deep Dive with Opal</h3>
             <p className="text-xs text-slate-500">AI-powered career guidance and planning</p>
           </div>
         </div>
