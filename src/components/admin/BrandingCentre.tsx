@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Palette, Type, Square, LayoutGrid as Layout, Sparkles, Eye, Save, AlertTriangle, CheckCircle, Monitor, RefreshCw, Upload, X, Info } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Palette, Type, Square, LayoutGrid as Layout, Sparkles, Eye, Save, AlertTriangle, CheckCircle, Monitor, RefreshCw, Upload, X, Info, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useBranding, BrandingSettings, DEFAULT_BRANDING } from '../../contexts/BrandingContext';
@@ -159,9 +159,129 @@ function SelectField({ label, value, onChange, options }: {
   );
 }
 
+// ---------- Image upload helper ----------
+
+const BUCKET = 'branding';
+
+async function uploadBrandingImage(file: File, storagePath: string): Promise<string> {
+  const { error } = await supabase.storage
+    .from(BUCKET)
+    .upload(storagePath, file, { upsert: true, contentType: file.type });
+  if (error) throw error;
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(storagePath);
+  // Bust cache so the browser fetches the updated image
+  return `${data.publicUrl}?t=${Date.now()}`;
+}
+
+function ImageUpload({
+  label,
+  description,
+  value,
+  storagePath,
+  accept = 'image/png,image/jpeg,image/webp,image/svg+xml',
+  previewSize = 'md',
+  onChange,
+  onPersist,
+}: {
+  label: string;
+  description?: string;
+  value: string | null;
+  storagePath: string;
+  accept?: string;
+  previewSize?: 'sm' | 'md' | 'lg';
+  onChange: (url: string | null) => void;
+  onPersist?: (url: string | null) => Promise<void>;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const previewH = previewSize === 'sm' ? 'h-8 w-8' : previewSize === 'lg' ? 'h-20' : 'h-14';
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setError(null);
+    setUploading(true);
+    try {
+      const url = await uploadBrandingImage(file, storagePath);
+      onChange(url);
+      if (onPersist) await onPersist(url);
+    } catch (err: any) {
+      setError(err.message ?? 'Upload failed');
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = '';
+    }
+  }
+
+  async function handleRemove() {
+    onChange(null);
+    if (onPersist) await onPersist(null);
+  }
+
+  return (
+    <div>
+      <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
+      {description && <p className="text-xs text-slate-500 mb-2">{description}</p>}
+      <div className="flex items-center gap-3">
+        {value ? (
+          <div className="relative group">
+            <img
+              src={value}
+              alt={label}
+              className={`${previewH} object-contain rounded-lg border border-slate-200 bg-slate-50`}
+            />
+            <button
+              type="button"
+              onClick={handleRemove}
+              className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        ) : (
+          <div className={`${previewH} aspect-square flex items-center justify-center rounded-lg border-2 border-dashed border-slate-200 bg-slate-50`}>
+            <ImageIcon className="w-5 h-5 text-slate-300" />
+          </div>
+        )}
+        <div className="flex flex-col gap-1.5">
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            disabled={uploading}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 transition-colors"
+          >
+            {uploading ? (
+              <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading…</>
+            ) : (
+              <><Upload className="w-3.5 h-3.5" /> {value ? 'Replace' : 'Upload'}</>
+            )}
+          </button>
+          {value && (
+            <button
+              type="button"
+              onClick={handleRemove}
+              className="text-xs text-red-500 hover:text-red-700 transition-colors text-left"
+            >
+              Remove image
+            </button>
+          )}
+        </div>
+      </div>
+      {error && <p className="mt-1.5 text-xs text-red-600">{error}</p>}
+      <input ref={inputRef} type="file" accept={accept} className="hidden" onChange={handleFile} />
+    </div>
+  );
+}
+
 // ---------- Section panels ----------
 
-function IdentityPanel({ draft, update }: { draft: BrandingSettings; update: (k: keyof BrandingSettings, v: any) => void }) {
+function IdentityPanel({ draft, update, persistField }: {
+  draft: BrandingSettings;
+  update: (k: keyof BrandingSettings, v: any) => void;
+  persistField: (k: keyof BrandingSettings, v: any) => Promise<void>;
+}) {
   return (
     <div className="space-y-5">
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex gap-3">
@@ -174,26 +294,28 @@ function IdentityPanel({ draft, update }: { draft: BrandingSettings; update: (k:
       <TextField label="Platform Name" value={draft.platform_name} onChange={v => update('platform_name', v)} placeholder="Evolo" />
       <TextField label="Tagline" value={draft.tagline} onChange={v => update('tagline', v)} placeholder="The People Operating System" />
       <TextareaField label="Subtitle" value={draft.subtitle} onChange={v => update('subtitle', v)} />
-      <div className="grid grid-cols-2 gap-4">
-        <TextField label="Logo URL" value={draft.logo_url ?? ''} onChange={v => update('logo_url', v || null)} placeholder="https://…" />
-        <TextField label="Favicon URL" value={draft.favicon_url ?? ''} onChange={v => update('favicon_url', v || null)} placeholder="https://…" />
+      <div className="grid grid-cols-2 gap-6 pt-1">
+        <ImageUpload
+          label="Logo"
+          description="Displayed in the sidebar header. PNG, SVG or WebP recommended."
+          value={draft.logo_url}
+          storagePath="logo/logo"
+          accept="image/png,image/jpeg,image/svg+xml,image/webp"
+          previewSize="lg"
+          onChange={url => update('logo_url', url)}
+          onPersist={url => persistField('logo_url', url)}
+        />
+        <ImageUpload
+          label="Favicon"
+          description="Small icon shown in browser tabs. 32×32 PNG or ICO recommended."
+          value={draft.favicon_url}
+          storagePath="favicon/favicon"
+          accept="image/png,image/x-icon,image/vnd.microsoft.icon,image/jpeg"
+          previewSize="sm"
+          onChange={url => update('favicon_url', url)}
+          onPersist={url => persistField('favicon_url', url)}
+        />
       </div>
-      {(draft.logo_url || draft.favicon_url) && (
-        <div className="flex gap-4">
-          {draft.logo_url && (
-            <div className="border border-slate-200 rounded-lg p-3 text-center">
-              <p className="text-xs text-slate-500 mb-2">Logo Preview</p>
-              <img src={draft.logo_url} alt="logo" className="h-12 object-contain mx-auto" />
-            </div>
-          )}
-          {draft.favicon_url && (
-            <div className="border border-slate-200 rounded-lg p-3 text-center">
-              <p className="text-xs text-slate-500 mb-2">Favicon Preview</p>
-              <img src={draft.favicon_url} alt="favicon" className="h-8 w-8 object-contain mx-auto" />
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }
@@ -477,7 +599,11 @@ function CardsPanel({ draft, update }: { draft: BrandingSettings; update: (k: ke
   );
 }
 
-function OpalPanel({ draft, update }: { draft: BrandingSettings; update: (k: keyof BrandingSettings, v: any) => void }) {
+function OpalPanel({ draft, update, persistField }: {
+  draft: BrandingSettings;
+  update: (k: keyof BrandingSettings, v: any) => void;
+  persistField: (k: keyof BrandingSettings, v: any) => Promise<void>;
+}) {
   const colorThemes = [
     { value: 'cyan', label: 'Cyan (Default)' },
     { value: 'blue', label: 'Blue' },
@@ -508,7 +634,16 @@ function OpalPanel({ draft, update }: { draft: BrandingSettings; update: (k: key
         <SelectField label="Colour Theme" value={draft.opal_color_theme} onChange={v => update('opal_color_theme', v)} options={colorThemes} />
       </div>
       <TextareaField label="Welcome Message" value={draft.opal_welcome_message} onChange={v => update('opal_welcome_message', v)} rows={3} />
-      <TextField label="Avatar URL" value={draft.opal_avatar_url ?? ''} onChange={v => update('opal_avatar_url', v || null)} placeholder="https://… (leave blank for default)" />
+      <ImageUpload
+        label="Avatar"
+        description="Square image displayed in the Opal chat header. PNG or WebP recommended."
+        value={draft.opal_avatar_url}
+        storagePath="opal-avatar/avatar"
+        accept="image/png,image/jpeg,image/webp"
+        previewSize="md"
+        onChange={url => update('opal_avatar_url', url)}
+        onPersist={url => persistField('opal_avatar_url', url)}
+      />
 
       <div>
         <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Opal Preview</p>
@@ -669,6 +804,18 @@ export default function BrandingCentre() {
     setSaved(false);
   }, []);
 
+  // Immediately persist a single field (used by image uploads so the URL is saved without requiring Save Changes)
+  const persistField = useCallback(async (key: keyof BrandingSettings, value: any) => {
+    if (!profile) return;
+    const patch = { [key]: value, updated_by: profile.id, updated_at: new Date().toISOString() };
+    if (branding.id) {
+      await supabase.from('organisation_branding').update(patch).eq('id', branding.id);
+    } else {
+      await supabase.from('organisation_branding').insert([{ ...DEFAULT_BRANDING, ...patch, created_by: profile.id, is_active: true }]);
+    }
+    await refresh();
+  }, [profile, branding.id, refresh]);
+
   function resetToDefaults() {
     setDraft({ ...branding });
     setHasUnsaved(false);
@@ -794,12 +941,12 @@ export default function BrandingCentre() {
 
         {/* Panel */}
         <div className="flex-1 min-w-0 bg-white rounded-2xl border border-slate-200 p-6">
-          {activeSection === 'identity'   && <IdentityPanel   draft={draft} update={update} />}
+          {activeSection === 'identity'   && <IdentityPanel   draft={draft} update={update} persistField={persistField} />}
           {activeSection === 'colours'    && <ColoursPanel    draft={draft} update={update} />}
           {activeSection === 'typography' && <TypographyPanel draft={draft} update={update} />}
           {activeSection === 'buttons'    && <ButtonsPanel    draft={draft} update={update} />}
           {activeSection === 'cards'      && <CardsPanel      draft={draft} update={update} />}
-          {activeSection === 'opal'       && <OpalPanel       draft={draft} update={update} />}
+          {activeSection === 'opal'       && <OpalPanel       draft={draft} update={update} persistField={persistField} />}
           {activeSection === 'preview'    && <LivePreview     draft={draft} />}
         </div>
       </div>
