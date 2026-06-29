@@ -1480,7 +1480,7 @@ export function LeadershipDashboard({ onNavigate }: LeadershipDashboardProps = {
     <div className="space-y-8">
       <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4 pt-2">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Leadership Dashboard</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Executive Homepage</h1>
           <p className="text-slate-500 mt-1">Organisation-wide talent insights and strategic planning</p>
         </div>
         <div className="flex flex-wrap gap-2">

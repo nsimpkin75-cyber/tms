@@ -95,7 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (levelNames.length > 0) return permissionsToDashboardRole(levelPerms);
     if (p.role === 'manager') return 'manager';
     if (p.role === 'dept_lead') return 'dept_lead';
-    if (p.role === 'admin' || p.role === 'leadership' || p.role === 'senior') return 'admin';
+    if (p.role === 'admin' || p.role === 'leadership' || p.role === 'senior' || p.role === 'executive') return 'admin';
     return 'employee';
   }
 

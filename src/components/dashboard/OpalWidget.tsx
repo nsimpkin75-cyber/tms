@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
-import { MessageSquare, Send } from 'lucide-react';
+import { Send } from 'lucide-react';
+import { useBranding } from '../../contexts/BrandingContext';
 
 interface OpalWidgetProps {
   answerFn: (q: string) => string;
@@ -8,10 +9,35 @@ interface OpalWidgetProps {
   title?: string;
 }
 
+function OpalOrb({ size = 32 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <radialGradient id="orb-bg" cx="50%" cy="40%" r="55%">
+          <stop offset="0%" stopColor="#e0f7fa" />
+          <stop offset="40%" stopColor="#b2ebf2" />
+          <stop offset="100%" stopColor="#00bcd4" />
+        </radialGradient>
+        <radialGradient id="orb-shimmer" cx="30%" cy="30%" r="70%">
+          <stop offset="0%" stopColor="rgba(255,255,255,0.5)" />
+          <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+        </radialGradient>
+      </defs>
+      <circle cx="16" cy="16" r="15" fill="url(#orb-bg)" />
+      <circle cx="16" cy="16" r="15" fill="url(#orb-shimmer)" />
+      <ellipse cx="11" cy="11" rx="3" ry="2" fill="white" opacity="0.3" transform="rotate(-20 11 11)" />
+    </svg>
+  );
+}
+
 export default function OpalWidget({ answerFn, placeholder, suggestions, title }: OpalWidgetProps) {
   const [query, setQuery] = useState('');
   const [response, setResponse] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const { branding } = useBranding();
+
+  const displayName = branding.opal_display_name || 'Opal';
+  const widgetTitle = title ?? `${displayName} — Your AI Guide`;
 
   function handleAsk() {
     if (!query.trim()) return;
@@ -19,13 +45,26 @@ export default function OpalWidget({ answerFn, placeholder, suggestions, title }
   }
 
   return (
-    <div className="card" style={{ borderColor: 'rgba(var(--brand-primary-rgb, 8 145 178) / 0.2)', background: 'var(--brand-card-bg, #fff)' }}>
+    <div className="card" style={{ borderColor: 'rgba(8, 145, 178, 0.2)', background: 'var(--brand-card-bg, #fff)' }}>
       <div className="flex items-center gap-3 mb-3">
-        <div className="p-2 rounded-lg bg-slate-100">
-          <MessageSquare className="w-4 h-4" style={{ color: 'var(--brand-primary)' }} />
+        <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+          {branding.opal_avatar_url ? (
+            <img
+              src={branding.opal_avatar_url}
+              alt={displayName}
+              className="w-full h-full object-cover"
+              onError={e => {
+                e.currentTarget.style.display = 'none';
+                const parent = e.currentTarget.parentElement;
+                if (parent) parent.dataset.fallback = 'true';
+              }}
+            />
+          ) : (
+            <OpalOrb size={32} />
+          )}
         </div>
         <div>
-          <h3 className="font-semibold text-slate-900 text-sm">{title ?? 'Opal — Your AI Guide'}</h3>
+          <h3 className="font-semibold text-slate-900 text-sm">{widgetTitle}</h3>
           {suggestions && <p className="text-xs text-slate-500">{suggestions}</p>}
         </div>
       </div>

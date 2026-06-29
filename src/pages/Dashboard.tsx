@@ -34,7 +34,7 @@ const TAB_META: Record<DashTab, { label: string; icon: React.ReactNode }> = {
   employee: { label: 'My Dashboard', icon: <User className="w-4 h-4" /> },
   manager: { label: 'My Team', icon: <Users className="w-4 h-4" /> },
   dept_lead: { label: 'Department', icon: <Building2 className="w-4 h-4" /> },
-  admin: { label: 'Organisation', icon: <BarChart3 className="w-4 h-4" /> },
+  admin: { label: 'Executive', icon: <BarChart3 className="w-4 h-4" /> },
 };
 
 export function Dashboard({ onNavigate }: DashboardProps = {}) {
