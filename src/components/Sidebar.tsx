@@ -63,12 +63,12 @@ export function Sidebar({ currentPath, onNavigate }: SidebarProps) {
         <div className="flex items-center gap-3">
           {!collapsed && (
             <>
-              <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">
-                EN
+              <div className="w-10 h-10 bg-cyan-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                EV
               </div>
               <div className="flex-1 min-w-0">
-                <h2 className="text-white font-semibold truncate">Epos Now</h2>
-                <p className="text-slate-400 text-xs truncate">Evolo</p>
+                <h2 className="text-white font-semibold truncate">Evolo</h2>
+                <p className="text-slate-400 text-xs truncate">The People Operating System</p>
               </div>
             </>
           )}
