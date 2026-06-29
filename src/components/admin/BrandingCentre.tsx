@@ -1186,7 +1186,7 @@ function LivePreview({ draft, visible, onToggle }: {
 
 // ---------- Main Component ----------
 
-export default function BrandingCentre() {
+function BrandingCentre() {
   const { profile } = useAuth();
   const { branding, refresh } = useBranding();
   const [draft, setDraft] = useState<BrandingSettings>(DEFAULT_BRANDING);
