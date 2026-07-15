@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, CreditCard as Edit2, Trash2, Search, Eye, KeyRound, X } from 'lucide-react';
+import { Plus, CreditCard as Edit2, Trash2, Search, Eye, KeyRound, X, AlertTriangle, Mail } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -31,6 +31,7 @@ interface Profile {
   status: 'active' | 'pending' | 'inactive';
   created_at: string;
   competency_level: 'Employee' | 'Manager' | 'Senior Leader' | null;
+  must_change_password?: boolean;
 }
 
 interface AccessLevelType {
@@ -485,12 +486,15 @@ export default function UserManagement() {
     }
   };
 
-  const handlePasswordReset = async (email: string) => {
-    if (!confirm(`Send a password reset email to ${email}?`)) return;
+  const handlePasswordReset = async (email: string, mode: 'email' | 'admin' = 'email') => {
+    const modeLabel = mode === 'admin'
+      ? 'generate a new temporary password (user will be forced to change on next login)'
+      : 'send a password reset email link';
+    if (!confirm(`This will ${modeLabel} for ${email}. Continue?`)) return;
 
     try {
       const { data: result, error: fnError } = await supabase.functions.invoke('reset-user-password', {
-        body: { email },
+        body: { email, mode },
       });
 
       if (fnError) {
@@ -506,9 +510,10 @@ export default function UserManagement() {
       }
 
       if (result?.tempPassword) {
-        alert(`Password reset successfully!\n\nEmail: ${email}\nNew Temporary Password: ${result.tempPassword}\n\nPlease save this password and share it with the user securely.`);
+        alert(`Password reset successfully!\n\nEmail: ${email}\nNew Temporary Password: ${result.tempPassword}\n\nThe user will be required to change this password on their next login.\n\nPlease share this password securely — it is shown only once.`);
+        fetchProfiles();
       } else {
-        alert('Password reset email sent successfully');
+        alert('Password reset email sent successfully. The user will receive a link to set a new password.');
       }
     } catch (error) {
       console.error('Error resetting password:', error);
@@ -796,15 +801,23 @@ export default function UserManagement() {
                     {getUserAccessLevelNames(profile.id)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      profile.status === 'active'
-                        ? 'bg-green-100 text-green-800'
-                        : profile.status === 'pending'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {profile.status}
-                    </span>
+                    <div className="flex flex-col gap-1">
+                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full w-fit ${
+                        profile.status === 'active'
+                          ? 'bg-green-100 text-green-800'
+                          : profile.status === 'pending'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {profile.status}
+                      </span>
+                      {profile.must_change_password && (
+                        <span className="px-2 py-0.5 inline-flex items-center gap-1 text-xs font-medium rounded-full bg-amber-100 text-amber-800 w-fit">
+                          <AlertTriangle className="w-3 h-3" />
+                          Temp password
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {getManagerName(profile.manager_id)}
@@ -826,13 +839,22 @@ export default function UserManagement() {
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
-                    <button
-                      onClick={() => handlePasswordReset(profile.email)}
-                      className="text-orange-600 hover:text-orange-900 mr-3"
-                      title="Reset password"
-                    >
-                      <KeyRound className="w-4 h-4" />
-                    </button>
+                    <div className="inline-flex items-center gap-1 mr-3">
+                      <button
+                        onClick={() => handlePasswordReset(profile.email, 'admin')}
+                        className="text-orange-600 hover:text-orange-900"
+                        title="Generate temporary password (user must change on login)"
+                      >
+                        <KeyRound className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handlePasswordReset(profile.email, 'email')}
+                        className="text-blue-400 hover:text-blue-700"
+                        title="Send password reset email"
+                      >
+                        <Mail className="w-4 h-4" />
+                      </button>
+                    </div>
                     {profile.status !== 'pending' && (
                       <button
                         onClick={() => handleToggleActive(profile.id, profile.active)}

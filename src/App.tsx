@@ -11,6 +11,7 @@ import { Pathways } from './pages/Pathways';
 import { Training } from './pages/Training';
 import { Copilot as MARTI } from './pages/Copilot';
 import { Settings } from './pages/Settings';
+import { ForcePasswordChange } from './components/ForcePasswordChange';
 import Admin from './pages/Admin';
 import Strategies from './pages/Strategies';
 import CompetencyFramework from './pages/CompetencyFramework';
@@ -19,7 +20,7 @@ import AICareerQuiz from './pages/AICareerQuiz';
 import CareerCoach from './pages/CareerCoach';
 
 function AppContent() {
-  const { user, loading, isViewingAs, viewAsProfile, endViewAs } = useAuth();
+  const { user, loading, mustChangePassword, isViewingAs, viewAsProfile, endViewAs } = useAuth();
   const [currentPath, setCurrentPath] = useState('/dashboard');
   const [viewAsBlockedVisible, setViewAsBlockedVisible] = useState(false);
 
@@ -45,6 +46,10 @@ function AppContent() {
 
   if (!user) {
     return <Login />;
+  }
+
+  if (mustChangePassword) {
+    return <ForcePasswordChange />;
   }
 
   function renderPage() {

@@ -24,9 +24,11 @@ interface AuthContextType {
   effectiveProfile: Profile | null;
   isViewingAs: boolean;
   loading: boolean;
+  mustChangePassword: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, firstName: string, lastName: string) => Promise<void>;
   signOut: () => Promise<void>;
+  clearMustChangePassword: () => Promise<void>;
   startViewAs: (targetUserId: string) => Promise<void>;
   endViewAs: () => Promise<void>;
   hasPermission: (permission: string) => boolean;
@@ -77,6 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [viewAsAccessLevelNames, setViewAsAccessLevelNames] = useState<string[]>([]);
   const [viewAsAccessLevelPermissions, setViewAsAccessLevelPermissions] = useState<AccessLevelPermissions>({});
   const [loading, setLoading] = useState(true);
+  const [mustChangePassword, setMustChangePassword] = useState(false);
 
   const isViewingAs = viewAsProfile !== null;
   const effectiveProfile = viewAsProfile || profile;
@@ -146,6 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfile(data);
 
       if (data) {
+        setMustChangePassword(!!(data as any).must_change_password);
         await loadPermissions(data.id);
         const { names, perms } = await loadAccessLevelData(data.id);
         setAccessLevelNames(names);
@@ -331,6 +335,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function clearMustChangePassword() {
+    if (!profile) return;
+    const { error } = await supabase
+      .from('profiles')
+      .update({ must_change_password: false, password_changed_at: new Date().toISOString() })
+      .eq('id', profile.id);
+    if (error) throw error;
+    setMustChangePassword(false);
+    setProfile(prev => prev ? { ...prev, must_change_password: false } as any : prev);
+  }
+
   async function signOut() {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
@@ -345,9 +360,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         effectiveProfile,
         isViewingAs,
         loading,
+        mustChangePassword,
         signIn,
         signUp,
         signOut,
+        clearMustChangePassword,
         startViewAs,
         endViewAs,
         hasPermission,

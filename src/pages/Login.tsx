@@ -69,6 +69,7 @@ export function Login() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [forgotPasswordSent, setForgotPasswordSent] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -98,9 +99,20 @@ export function Login() {
 
     try {
       if (isForgotPassword) {
-        setError('Password reset via email is not currently configured. Please contact your administrator to reset your password.');
-        setLoading(false);
-        return;
+        const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+        const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-password-reset`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${anonKey}` },
+          body: JSON.stringify({ email }),
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body?.error || 'Failed to send reset email. Please try again.');
+        }
+        setSuccess('If an account with that email exists, a password reset link has been sent. Please check your inbox.');
+        setEmail('');
+        setForgotPasswordSent(true);
       } else if (isResettingPassword) {
         const { error } = await supabase.auth.updateUser({
           password: newPassword
@@ -167,13 +179,13 @@ export function Login() {
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-slate-900">
               {isResettingPassword ? 'Reset your password' :
-               isForgotPassword ? 'Forgot password' :
+               isForgotPassword ? forgotPasswordSent ? 'Reset link sent' : 'Forgot password' :
                isSignUp ? 'Create your account' :
                'Welcome back'}
             </h2>
             <p className="text-slate-500 mt-1 text-sm">
               {isResettingPassword ? 'Enter your new password below.' :
-               isForgotPassword ? 'Contact your administrator to reset access.' :
+               isForgotPassword ? forgotPasswordSent ? 'Check your email for a reset link.' : 'Enter your email and we\'ll send you a reset link.' :
                isSignUp ? 'Join your team on Evolo.' :
                'Sign in to continue to Evolo.'}
             </p>
@@ -198,12 +210,27 @@ export function Login() {
                 <p className="text-xs text-slate-500 mt-1">Password must be at least 6 characters</p>
               </div>
             ) : isForgotPassword ? (
-              <div className="rounded-lg p-4 bg-slate-50 border border-slate-200">
-                <p className="text-sm font-medium text-slate-900">Need to reset your password?</p>
-                <p className="text-sm mt-2 text-slate-700">
-                  Please contact your administrator to reset your password.
-                </p>
-              </div>
+              forgotPasswordSent ? (
+                <div className="rounded-lg p-4 bg-green-50 border border-green-200">
+                  <p className="text-sm font-medium text-green-900">Reset link sent</p>
+                  <p className="text-sm mt-1 text-green-700">
+                    If an account with that email exists, a password reset link has been sent. Check your inbox.
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">Email Address</label>
+                  <input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="input-field"
+                    placeholder="you@example.com"
+                    required
+                  />
+                </div>
+              )
             ) : (
               <>
                 {isSignUp && (
@@ -300,6 +327,15 @@ export function Login() {
                 )}
               </button>
             )}
+            {isForgotPassword && !forgotPasswordSent && (
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Sending...' : 'Send Reset Link'}
+              </button>
+            )}
           </form>
 
           {!isResettingPassword && (
@@ -324,6 +360,7 @@ export function Login() {
                     setIsSignUp(false);
                     setError('');
                     setSuccess('');
+                    setForgotPasswordSent(false);
                   }}
                   className="text-sm text-slate-500 hover:text-slate-700 font-medium"
                 >

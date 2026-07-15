@@ -23,17 +23,15 @@ interface CreateUserRequest {
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      status: 200,
-      headers: corsHeaders,
-    });
+    return new Response(null, { status: 200, headers: corsHeaders });
   }
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
 
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
@@ -55,7 +53,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: adminProfile, error: adminProfileError } = await supabaseAdmin
       .from('profiles')
-      .select('role')
+      .select('role, full_name')
       .eq('id', adminUser.id)
       .maybeSingle();
 
@@ -75,15 +73,14 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const tempPassword = `TempPass${Math.random().toString(36).substring(2, 10)}!1`;
+    // Generate a secure temporary password
+    const tempPassword = `TempPass${crypto.randomUUID().replace(/-/g, '').substring(0, 8)}!1`;
 
     const { data: authData, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email: requestData.email,
       password: tempPassword,
       email_confirm: true,
-      user_metadata: {
-        full_name: requestData.full_name,
-      },
+      user_metadata: { full_name: requestData.full_name },
     });
 
     if (createError) {
@@ -95,7 +92,7 @@ Deno.serve(async (req: Request) => {
 
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    const profileData: any = {
+    const profileData: Record<string, unknown> = {
       id: authData.user.id,
       email: requestData.email,
       full_name: requestData.full_name,
@@ -109,6 +106,7 @@ Deno.serve(async (req: Request) => {
       has_strategic_roadmap_access: requestData.has_strategic_roadmap_access || false,
       competency_level: requestData.competency_level || 'Employee',
       active: true,
+      must_change_password: true,
     };
 
     if (requestData.role === 'admin' && requestData.admin_type) {
@@ -128,28 +126,35 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // Log account creation to security audit log
+    await supabaseAdmin.from('security_audit_log').insert({
+      event_type: 'account_created',
+      actor_id: adminUser.id,
+      target_user_id: authData.user.id,
+      target_email: requestData.email,
+      ip_address: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || null,
+      user_agent: req.headers.get('user-agent') || null,
+      metadata: {
+        created_by_name: adminProfile.full_name,
+        role: requestData.role,
+        temporary_password_issued: true,
+        must_change_password: true,
+      },
+    });
+
     return new Response(
       JSON.stringify({
         success: true,
-        user: {
-          id: authData.user.id,
-          email: authData.user.email,
-        },
-        tempPassword: tempPassword,
+        user: { id: authData.user.id, email: authData.user.email },
+        tempPassword,
       }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     console.error('Error creating user:', error);
     return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      JSON.stringify({ error: (error as Error).message || 'Internal server error' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
