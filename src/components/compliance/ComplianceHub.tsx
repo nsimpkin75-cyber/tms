@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import {
   ShieldCheck,
   CheckCircle2,
@@ -138,6 +138,8 @@ export default function ComplianceHub() {
   const [editingItem, setEditingItem] = useState<ComplianceItem | null>(null);
   const [roleRequirements, setRoleRequirements] = useState<any[]>([]);
   const [jobFamilies, setJobFamilies] = useState<any[]>([]);
+  const [roleReqMap, setRoleReqMap] = useState<Record<string, string[]>>({});
+  const [currentRoleTitle, setCurrentRoleTitle] = useState<string | null>(null);
 
   const isManager = effectiveProfile?.role === 'manager' || effectiveProfile?.role === 'dept_lead';
   const isLeadership = effectiveProfile?.role === 'leadership' || effectiveProfile?.role === 'senior';
@@ -147,15 +149,16 @@ export default function ComplianceHub() {
     determineInitialTab();
     fetchComplianceItems();
     fetchJobFamilies();
+    fetchRoleRequirements();
   }, []);
 
   useEffect(() => {
-    if (items.length > 0) {
+    if (items.length > 0 && Object.keys(roleReqMap).length > 0) {
       fetchMyRecords();
       if (isManager) fetchTeamRecords();
       if (isLeadership || isAdmin) fetchAllRecords();
     }
-  }, [items, effectiveProfile?.id]);
+  }, [items, roleReqMap, effectiveProfile?.id]);
 
  function determineInitialTab() {
     const role = effectiveProfile?.role;
@@ -193,9 +196,33 @@ export default function ComplianceHub() {
         setJobFamilies(data);
         const depts = [...new Set(data.map((j: any) => j.department).filter(Boolean))] as string[];
         setDepartments(depts);
+        if (effectiveProfile?.job_family_id) {
+          const jf = data.find((j: any) => j.id === effectiveProfile.job_family_id);
+          if (jf) setCurrentRoleTitle(jf.title);
+        }
       }
     } catch (error) {
       console.error('Error fetching job families:', error);
+    }
+  }
+
+  async function fetchRoleRequirements() {
+    try {
+      const { data } = await supabase
+        .from('compliance_role_requirements')
+        .select('compliance_item_id, job_family_id, requirement_type, is_active')
+        .eq('is_active', true);
+      if (data) {
+        setRoleRequirements(data);
+        const map: Record<string, string[]> = {};
+        data.forEach((rr: any) => {
+          if (!map[rr.job_family_id]) map[rr.job_family_id] = [];
+          map[rr.job_family_id].push(rr.compliance_item_id);
+        });
+        setRoleReqMap(map);
+      }
+    } catch (error) {
+      console.error('Error fetching role requirements:', error);
     }
   }
 
@@ -294,7 +321,46 @@ export default function ComplianceHub() {
           evidence_required: r.item?.evidence_required,
         };
       });
-      setTeamRecords(shaped);
+
+      // Build gap records: for each team member, find required items with no record
+      const gapRecords: ComplianceRecord[] = [];
+      teamMembers.forEach((member: any) => {
+        const requiredItemIds = roleReqMap[member.job_family_id] || [];
+        const existingItemIds = new Set((recs || []).filter((r: any) => r.profile_id === member.id).map((r: any) => r.compliance_item_id));
+        requiredItemIds.forEach((itemId: string) => {
+          if (!existingItemIds.has(itemId)) {
+            const item = items.find(i => i.id === itemId);
+            if (item) {
+              gapRecords.push({
+                id: `gap-${member.id}-${itemId}`,
+                profile_id: member.id,
+                compliance_item_id: itemId,
+                status: 'not_started',
+                evidence_file_path: null,
+                evidence_file_name: null,
+                completion_date: null,
+                expiry_date: null,
+                self_assessment_rating: null,
+                manager_verified: false,
+                manager_verified_by: null,
+                manager_verified_at: null,
+                manager_notes: null,
+                employee_name: member.full_name,
+                employee_email: member.email,
+                job_title: member.job_title,
+                department: member.department,
+                item_name: item.name,
+                item_type: item.item_type,
+                requirement_type: item.requirement_type,
+                regulatory_body: item.regulatory_body,
+                expiry_months: item.expiry_months,
+                evidence_required: item.evidence_required,
+              });
+            }
+          }
+        });
+      });
+      setTeamRecords([...shaped, ...gapRecords]);
     } catch (error) {
       console.error('Error fetching team records:', error);
     }
@@ -335,7 +401,46 @@ export default function ComplianceHub() {
           evidence_required: r.item?.evidence_required,
         };
       });
-      setAllRecords(shaped);
+
+      // Build gap records for all employees based on their role assignments
+      const gapRecords: ComplianceRecord[] = [];
+      allProfiles.forEach((p: any) => {
+        const requiredItemIds = roleReqMap[p.job_family_id] || [];
+        const existingItemIds = new Set((recs || []).filter((r: any) => r.profile_id === p.id).map((r: any) => r.compliance_item_id));
+        requiredItemIds.forEach((itemId: string) => {
+          if (!existingItemIds.has(itemId)) {
+            const item = items.find(i => i.id === itemId);
+            if (item) {
+              gapRecords.push({
+                id: `gap-${p.id}-${itemId}`,
+                profile_id: p.id,
+                compliance_item_id: itemId,
+                status: 'not_started',
+                evidence_file_path: null,
+                evidence_file_name: null,
+                completion_date: null,
+                expiry_date: null,
+                self_assessment_rating: null,
+                manager_verified: false,
+                manager_verified_by: null,
+                manager_verified_at: null,
+                manager_notes: null,
+                employee_name: p.full_name,
+                employee_email: p.email,
+                job_title: p.job_title,
+                department: p.department,
+                item_name: item.name,
+                item_type: item.item_type,
+                requirement_type: item.requirement_type,
+                regulatory_body: item.regulatory_body,
+                expiry_months: item.expiry_months,
+                evidence_required: item.evidence_required,
+              });
+            }
+          }
+        });
+      });
+      setAllRecords([...shaped, ...gapRecords]);
     } catch (error) {
       console.error('Error fetching all records:', error);
     }
@@ -343,7 +448,9 @@ export default function ComplianceHub() {
 
   function getItemsForRole(jobFamilyId: string | undefined): ComplianceItem[] {
     if (!jobFamilyId) return items;
-    return items;
+    const requiredItemIds = roleReqMap[jobFamilyId];
+    if (!requiredItemIds || requiredItemIds.length === 0) return items;
+    return items.filter(item => requiredItemIds.includes(item.id));
   }
 
   async function handleUploadEvidence(itemId: string, file: File) {
@@ -434,6 +541,7 @@ export default function ComplianceHub() {
 
   async function handleVerify(recordId: string, approved: boolean) {
     if (!profile?.id) return;
+    if (recordId.startsWith('gap-') || recordId.startsWith('placeholder-')) return;
     setVerifyingId(recordId);
     try {
       await supabase
@@ -465,10 +573,12 @@ export default function ComplianceHub() {
 
   async function handleSendReminder(recordId: string, profileId: string, itemName: string) {
     try {
-      await supabase
-        .from('compliance_records')
-        .update({ reminder_sent_at: new Date().toISOString() })
-        .eq('id', recordId);
+      if (!recordId.startsWith('gap-') && !recordId.startsWith('placeholder-')) {
+        await supabase
+          .from('compliance_records')
+          .update({ reminder_sent_at: new Date().toISOString() })
+          .eq('id', recordId);
+      }
 
       await supabase.from('compliance_audit_log').insert({
         profile_id: profileId,
@@ -563,6 +673,9 @@ export default function ComplianceHub() {
           <h1 className="text-3xl font-bold text-gray-900">Compliance & Skills Hub</h1>
         </div>
         <p className="text-gray-500 ml-10">Track regulatory compliance and job-role competencies across your organisation</p>
+        {currentRoleTitle && (
+          <p className="text-sm text-blue-600 font-medium ml-10 mt-1">Your role profile: {currentRoleTitle}</p>
+        )}
       </div>
 
       {/* Tabs */}
@@ -826,7 +939,7 @@ export default function ComplianceHub() {
                         <td className="px-4 py-3 text-sm text-gray-600">{record.expiry_date || '—'}</td>
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-center gap-2">
-                            {record.status === 'pending_verification' && (
+                            {record.status === 'pending_verification' && !record.id.startsWith('gap-') && (
                               <>
                                 <button
                                   onClick={() => handleVerify(record.id, true)}
