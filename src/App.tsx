@@ -16,6 +16,7 @@ import Admin from './pages/Admin';
 import Strategies from './pages/Strategies';
 import CompetencyFramework from './pages/CompetencyFramework';
 import SkillsMatrix from './pages/SkillsMatrix';
+import ComplianceHubPage from './pages/ComplianceHub';
 import AICareerQuiz from './pages/AICareerQuiz';
 import CareerCoach from './pages/CareerCoach';
 
@@ -66,6 +67,8 @@ function AppContent() {
         return <CompetencyFramework />;
       case '/skills-matrix':
         return <SkillsMatrix />;
+      case '/compliance':
+        return <ComplianceHubPage />;
       case '/marti':
         return <MARTI onNavigate={setCurrentPath} />;
       case '/career-quiz':
