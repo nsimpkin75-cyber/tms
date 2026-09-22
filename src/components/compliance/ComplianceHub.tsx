@@ -117,7 +117,7 @@ function ProgressDonut({ compliant, total, size = 120 }: { compliant: number; to
   );
 }
 
-export default function ComplianceHub() {
+export default function ComplianceHub({ embedded = false }: { embedded?: boolean }) {
   const { profile, effectiveProfile, resolvedDashboardRole } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('employee');
   const [items, setItems] = useState<ComplianceItem[]>([]);
@@ -162,7 +162,10 @@ export default function ComplianceHub() {
 
  function determineInitialTab() {
     const role = effectiveProfile?.role;
-    if (role === 'admin' || profile?.admin_type != null) {
+    if (embedded && (role === 'admin' || profile?.admin_type != null)) {
+      // When embedded, admins start on employee view (admin controls are in Admin Portal)
+      setActiveTab('employee');
+    } else if (role === 'admin' || profile?.admin_type != null) {
       setActiveTab('admin');
     } else if (role === 'leadership' || role === 'senior') {
       setActiveTab('executive');
@@ -660,23 +663,28 @@ export default function ComplianceHub() {
   const availableTabs: { id: Tab; label: string; icon: any }[] = [
     { id: 'employee', label: 'My Compliance', icon: ShieldCheck },
     ...(isManager ? [{ id: 'manager' as Tab, label: 'Team Compliance', icon: Users }] : []),
-    ...(isLeadership || isAdmin ? [{ id: 'executive' as Tab, label: 'Organisational Risk', icon: TrendingUp }] : []),
-    ...(isAdmin ? [{ id: 'admin' as Tab, label: 'Admin Controls', icon: Settings }] : []),
+    ...(isLeadership ? [{ id: 'executive' as Tab, label: 'Organisational Risk', icon: TrendingUp }] : []),
+    ...(!embedded && isAdmin ? [{ id: 'admin' as Tab, label: 'Admin Controls', icon: Settings }] : []),
   ];
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <div className="flex items-center gap-3 mb-1">
-          <ShieldCheck className="w-7 h-7 text-blue-600" />
-          <h1 className="text-3xl font-bold text-gray-900">Compliance & Skills Hub</h1>
+      {/* Header — hidden when embedded in Training & Competence */}
+      {!embedded && (
+        <div>
+          <div className="flex items-center gap-3 mb-1">
+            <ShieldCheck className="w-7 h-7 text-blue-600" />
+            <h1 className="text-3xl font-bold text-gray-900">Compliance & Skills Hub</h1>
+          </div>
+          <p className="text-gray-500 ml-10">Track regulatory compliance and job-role competencies across your organisation</p>
+          {currentRoleTitle && (
+            <p className="text-sm text-blue-600 font-medium ml-10 mt-1">Your role profile: {currentRoleTitle}</p>
+          )}
         </div>
-        <p className="text-gray-500 ml-10">Track regulatory compliance and job-role competencies across your organisation</p>
-        {currentRoleTitle && (
-          <p className="text-sm text-blue-600 font-medium ml-10 mt-1">Your role profile: {currentRoleTitle}</p>
-        )}
-      </div>
+      )}
+      {embedded && currentRoleTitle && (
+        <p className="text-sm text-blue-600 font-medium">Your role profile: {currentRoleTitle}</p>
+      )}
 
       {/* Tabs */}
       <div className="flex flex-wrap gap-1 border-b border-gray-200">

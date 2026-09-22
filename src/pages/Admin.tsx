@@ -20,9 +20,10 @@ import ReviewStatusReport from '../components/admin/ReviewStatusReport';
 import BackfillOneToOne from '../components/admin/BackfillOneToOne';
 import RoleProfileRecommendations from '../components/admin/RoleProfileRecommendations';
 import SkillsMatrixAdmin from '../components/skills-matrix/SkillsMatrixAdmin';
+import ComplianceManagement from '../components/admin/ComplianceManagement';
 import BrandingCentre from '../components/admin/BrandingCentre';
 
-type TabType = 'users' | 'org-settings' | 'training' | 'plans' | 'jobs' | 'reports' | 'history' | 'criteria' | 'roadmap' | 'marti' | 'review-templates' | 'values' | 'language' | 'sm-admin' | 'moderation-workflow' | 'exec-moderators' | 'review-cycles' | 'review-report' | 'backfill-oto' | 'role-recommendations' | 'branding';
+type TabType = 'users' | 'org-settings' | 'training' | 'plans' | 'jobs' | 'reports' | 'history' | 'criteria' | 'roadmap' | 'marti' | 'review-templates' | 'values' | 'language' | 'sm-admin' | 'moderation-workflow' | 'exec-moderators' | 'review-cycles' | 'review-report' | 'backfill-oto' | 'role-recommendations' | 'branding' | 'compliance';
 
 interface NavSection {
   title: string;
@@ -68,6 +69,7 @@ export default function Admin() {
       title: 'Training & Reviews',
       items: [
         { id: 'training' as TabType, label: 'Training', icon: GraduationCap },
+        { id: 'compliance' as TabType, label: 'Compliance & Competence', icon: ShieldCheck },
         { id: 'review-cycles' as TabType, label: 'Review Templates', icon: RefreshCw },
         { id: 'review-report' as TabType, label: 'Review Status Report', icon: BarChart2 },
         { id: 'backfill-oto' as TabType, label: 'Backfill One-to-Ones', icon: DatabaseBackup },
@@ -185,6 +187,7 @@ export default function Admin() {
           {activeTab === 'backfill-oto' && <BackfillOneToOne />}
           {activeTab === 'role-recommendations' && <RoleProfileRecommendations />}
           {activeTab === 'sm-admin' && <SkillsMatrixAdmin />}
+          {activeTab === 'compliance' && <ComplianceManagement />}
           {activeTab === 'branding' && <BrandingCentre />}
         </div>
       </main>

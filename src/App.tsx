@@ -17,6 +17,8 @@ import Strategies from './pages/Strategies';
 import CompetencyFramework from './pages/CompetencyFramework';
 import SkillsMatrix from './pages/SkillsMatrix';
 import ComplianceHubPage from './pages/ComplianceHub';
+import TrainingCompetencePage from './pages/TrainingCompetence';
+import EngagementPage from './pages/Engagement';
 import AICareerQuiz from './pages/AICareerQuiz';
 import CareerCoach from './pages/CareerCoach';
 
@@ -62,13 +64,17 @@ function AppContent() {
       case '/pathways':
         return <Pathways onNavigate={setCurrentPath} />;
       case '/training':
-        return <Training />;
+        return <TrainingCompetencePage />;
+      case '/training-competence':
+        return <TrainingCompetencePage />;
       case '/competencies':
         return <CompetencyFramework />;
       case '/skills-matrix':
         return <SkillsMatrix />;
       case '/compliance':
         return <ComplianceHubPage />;
+      case '/engagement':
+        return <EngagementPage />;
       case '/marti':
         return <MARTI onNavigate={setCurrentPath} />;
       case '/career-quiz':

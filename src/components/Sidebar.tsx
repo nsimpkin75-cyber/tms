@@ -14,6 +14,7 @@ import {
   Award,
   Users,
   ShieldCheck,
+  Heart,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useBranding } from '../contexts/BrandingContext';
@@ -35,8 +36,8 @@ export function Sidebar({ currentPath, onNavigate }: SidebarProps) {
     { icon: TrendingUp, label: 'Career Pathways', path: '/pathways' },
     { icon: Award, label: 'Values', path: '/competencies' },
     { icon: Users, label: 'Skills Matrix', path: '/skills-matrix' },
-    { icon: ShieldCheck, label: 'Compliance Hub', path: '/compliance' },
-    { icon: Calendar, label: 'Training', path: '/training' },
+    { icon: ShieldCheck, label: 'Training & Competence', path: '/training-competence' },
+    { icon: Heart, label: 'Engagement', path: '/engagement' },
     { icon: MessageSquare, label: 'Opal', path: '/marti' },
   ];
 
