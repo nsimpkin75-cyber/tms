@@ -32,7 +32,7 @@ export function Sidebar({ currentPath, onNavigate }: SidebarProps) {
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
     { icon: FileText, label: 'Reviews', path: '/reviews' },
     { icon: TrendingUp, label: 'Career Pathways', path: '/pathways' },
-    { icon: Award, label: 'Competencies', path: '/competencies' },
+    { icon: Award, label: 'Values', path: '/competencies' },
     { icon: Users, label: 'Skills Matrix', path: '/skills-matrix' },
     { icon: Calendar, label: 'Training', path: '/training' },
     { icon: MessageSquare, label: 'Opal', path: '/marti' },

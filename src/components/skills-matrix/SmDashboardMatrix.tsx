@@ -366,7 +366,7 @@ export default function SmDashboardMatrix({ scope, department, summaryOnly = fal
             <div className="col-span-2 sm:col-span-3 lg:col-span-2 bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex items-center gap-3">
               <div className="p-2 rounded-lg bg-blue-50 text-blue-600 flex-shrink-0"><TrendingUp className="w-5 h-5" /></div>
               <div>
-                <p className="text-xs text-gray-500">Overall Competency</p>
+                <p className="text-xs text-gray-500">Overall Value</p>
                 <p className="text-2xl font-bold text-gray-900">{tiles.compPct}%</p>
                 <p className="text-xs text-gray-400">{tiles.competent} / {tiles.total} topics rated 3+</p>
               </div>
@@ -407,7 +407,7 @@ export default function SmDashboardMatrix({ scope, department, summaryOnly = fal
           {/* By category */}
           {tiles.byCat.length > 0 && (
             <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-              <p className="text-xs font-semibold text-gray-600 mb-3 uppercase tracking-wide">Competency % by Category</p>
+              <p className="text-xs font-semibold text-gray-600 mb-3 uppercase tracking-wide">Value % by Category</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2.5">
                 {tiles.byCat.map(cat => (
                   <div key={cat.id}>
@@ -598,7 +598,7 @@ export default function SmDashboardMatrix({ scope, department, summaryOnly = fal
         {filteredEmps.length} employee{filteredEmps.length !== 1 ? 's' : ''} · {visibleTopics.length} topic{visibleTopics.length !== 1 ? 's' : ''}
         {hasActiveFilters ? ' (filtered)' : ''}
         {' '}· Colour: <span className="text-red-600">0–1 red</span>, <span className="text-amber-600">2 amber</span>, <span className="text-green-600">3–5 green</span>
-        {' '}· Competency: ratings 3+ ÷ total
+        {' '}· Value: ratings 3+ ÷ total
       </p>
       </>
       )}

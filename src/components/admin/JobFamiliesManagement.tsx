@@ -734,7 +734,7 @@ export default function JobFamiliesManagement() {
                   />
                 </div>
 
-                {/* 12–13 removed (competencies & KPIs) — fields preserved in DB only */}
+                {/* 12–13 removed (values & KPIs) — fields preserved in DB only */}
 
                 {/* 12. Qualifications */}
                 <div>

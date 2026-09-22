@@ -82,8 +82,8 @@ export default function DeptLeadModerationPanel({ department, readOnly = false }
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // Per-case per-competency action state
-  const [compActions, setCompActions] = useState<Record<string, Record<string, CompetencyAction>>>({});
+  // Per-case per-value action state
+  const [compActions, setCompActions] = useState<Record<string, Record<string, ValueAction>>>({});
 
   useEffect(() => { loadCases(); }, [department]);
 
@@ -178,7 +178,7 @@ export default function DeptLeadModerationPanel({ department, readOnly = false }
   }
 
   function initActionsForCase(c: ModerationCase) {
-    const init: Record<string, CompetencyAction> = {};
+    const init: Record<string, ValueAction> = {};
     c.valuesRatings.forEach(vr => {
       const existing = c.dept_lead_decisions.find(d => d.competency_id === vr.competency_id);
       init[vr.competency_id] = existing
@@ -188,12 +188,12 @@ export default function DeptLeadModerationPanel({ department, readOnly = false }
     return init;
   }
 
-  function setCompAction(caseId: string, competencyId: string, update: Partial<CompetencyAction>) {
+  function setCompAction(caseId: string, valueId: string, update: Partial<CompetencyAction>) {
     setCompActions(prev => ({
       ...prev,
       [caseId]: {
         ...(prev[caseId] || {}),
-        [competencyId]: { ...(prev[caseId]?.[competencyId] || { action: '', rating: 3, comment: '' }), ...update },
+        [valueId]: { ...(prev[caseId]?.[valueId] || { action: '', rating: 3, comment: '' }), ...update },
       },
     }));
   }
@@ -218,15 +218,15 @@ export default function DeptLeadModerationPanel({ department, readOnly = false }
         },
         body: JSON.stringify({
           rating: newRating,
-          ratingType: 'competency',
+          ratingType: 'value',
           ratingLabel: RATING_LABELS[newRating] || String(newRating),
-          competencyName: vr.competency_title,
-          competencyStatement: vr.competency_statement || '',
+          valueName: vr.competency_title,
+          valueStatement: vr.competency_statement || '',
           whatGoodLooksLike: vr.what_good_looks_like || '',
           whatGreatLooksLike: vr.what_great_looks_like || '',
           employeeName,
           managerComments: justification,
-          seraSystemPrompt: `You are Opal, an AI coaching assistant reviewing a Department Lead's moderation decision. The DL has adjusted a competency rating. Coach the justification to ensure it is clear, evidence-based, and professional. Be supportive and constructive. Keep feedback to 1-2 sentences.`,
+          seraSystemPrompt: `You are Opal, an AI coaching assistant reviewing a Department Lead's moderation decision. The DL has adjusted a value rating. Coach the justification to ensure it is clear, evidence-based, and professional. Be supportive and constructive. Keep feedback to 1-2 sentences.`,
         }),
       });
       if (res.ok) {
@@ -324,7 +324,7 @@ export default function DeptLeadModerationPanel({ department, readOnly = false }
             recipient_id: c.manager_id,
             sender_id: profile.id,
             notification_type: 'moderation_rating_adjusted',
-            title: 'Competency Rating Adjusted by Department Lead',
+            title: 'Value Rating Adjusted by Department Lead',
             message: `Your rating for ${c.employee?.full_name} — ${d.competency_name}: original rating ${d.original_rating}/5 has been adjusted to ${d.dl_rating}/5.\n\nFeedback: ${d.dl_comment}`,
             competency_name: d.competency_name,
             original_rating: d.original_rating,
@@ -338,8 +338,8 @@ export default function DeptLeadModerationPanel({ department, readOnly = false }
           recipient_id: c.manager_id,
           sender_id: profile.id,
           notification_type: 'moderation_finalised',
-          title: 'Competency Ratings Approved — Moderation Complete',
-          message: `All competency ratings for ${c.employee?.full_name} have been approved. Moderation is now complete.`,
+          title: 'Value Ratings Approved — Moderation Complete',
+          message: `All value ratings for ${c.employee?.full_name} have been approved. Moderation is now complete.`,
           is_read: false,
         });
       }
@@ -368,7 +368,7 @@ export default function DeptLeadModerationPanel({ department, readOnly = false }
           </div>
           <div>
             <h2 className="text-xl font-bold text-slate-900">Department Moderation</h2>
-            <p className="text-sm text-slate-500">Review and action each competency rating individually</p>
+            <p className="text-sm text-slate-500">Review and action each value rating individually</p>
           </div>
         </div>
         {pendingCases.length > 0 && (
@@ -539,11 +539,11 @@ export default function DeptLeadModerationPanel({ department, readOnly = false }
                           </div>
                         )}
 
-                        {/* Per-competency DL decisions */}
+                        {/* Per-value DL decisions */}
                         {c.dept_lead_decisions.length > 0 && (
                           <div>
                             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
-                              Competency Decisions ({c.dept_lead_decisions.filter(d => d.action === 'adjusted').length} adjusted · {c.dept_lead_decisions.filter(d => d.action === 'approved').length} accepted)
+                              Value Decisions ({c.dept_lead_decisions.filter(d => d.action === 'adjusted').length} adjusted · {c.dept_lead_decisions.filter(d => d.action === 'approved').length} accepted)
                             </p>
                             <div className="space-y-2">
                               {c.dept_lead_decisions.map((d, i) => (
@@ -605,11 +605,11 @@ export default function DeptLeadModerationPanel({ department, readOnly = false }
                         {c.valuesRatings.length === 0 && (
                           <div className="flex items-center gap-2 p-4 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-500">
                             <AlertCircle className="w-4 h-4 text-slate-400 shrink-0" />
-                            No competency ratings (4 or 5) found for this case.
+                            No value ratings (4 or 5) found for this case.
                           </div>
                         )}
 
-                    {/* Per-competency rows */}
+                    {/* Per-value rows */}
                     {c.valuesRatings.length > 0 && (
                       <div className="space-y-4">
                         {c.valuesRatings.map(vr => {
@@ -618,7 +618,7 @@ export default function DeptLeadModerationPanel({ department, readOnly = false }
 
                           return (
                             <div key={vr.competency_id} className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                              {/* Competency header */}
+                              {/* Value header */}
                               <div className="px-4 py-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between flex-wrap gap-2">
                                 <div>
                                   <p className="text-xs text-slate-400 uppercase tracking-wide mb-0.5">{vr.value_title}</p>
@@ -645,7 +645,7 @@ export default function DeptLeadModerationPanel({ department, readOnly = false }
                               </div>
 
                               <div className="p-4 space-y-3">
-                                {/* Competency guidance */}
+                                {/* Value guidance */}
                                 {(vr.what_good_looks_like || vr.what_great_looks_like) && (
                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     {vr.what_good_looks_like && (
@@ -798,7 +798,7 @@ export default function DeptLeadModerationPanel({ department, readOnly = false }
                     {canAction && c.valuesRatings.length > 0 && (
                       <div className="flex items-center justify-between pt-2 border-t border-slate-200">
                         <div className="text-xs text-slate-500">
-                          {Object.values(caseActions).filter(a => a.action !== '').length} of {c.valuesRatings.length} competencies actioned
+                          {Object.values(caseActions).filter(a => a.action !== '').length} of {c.valuesRatings.length} values actioned
                         </div>
                         <button
                           onClick={() => submitCaseDecisions(c)}

@@ -34,9 +34,9 @@ const ROLES = [
 ];
 
 const TRIGGER_FIELDS = [
-  { value: 'rating', label: 'Rating (KPI or Competency)' },
+  { value: 'rating', label: 'Rating (KPI or Value)' },
   { value: 'kpi_rating', label: 'KPI Rating only' },
-  { value: 'competency_rating', label: 'Competency Rating only' },
+  { value: 'competency_rating', label: 'Value Rating only' },
 ];
 
 const TRIGGER_OPERATORS = [

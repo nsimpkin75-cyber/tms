@@ -78,8 +78,8 @@ export function OneToOneReviewForm({
   const [templateKPIs, setTemplateKPIs] = useState<TemplateKPI[]>([]);
   const [kpiRatings, setKpiRatings] = useState<KPIRating[]>([]);
   const [actions, setActions] = useState<ReviewAction[]>([]);
-  const [competencies, setCompetencies] = useState<any[]>([]);
-  const [competencyRatings, setCompetencyRatings] = useState<CompetencyRating[]>([]);
+  const [values, setValues] = useState<any[]>([]);
+  const [valueRatings, setValueRatings] = useState<CompetencyRating[]>([]);
   const [aiSummary, setAiSummary] = useState('');
   const [managerSummary, setManagerSummary] = useState('');
 
@@ -173,7 +173,7 @@ export function OneToOneReviewForm({
           .select(`
             competency_id,
             required_level_id,
-            competencies!inner(id, title, description),
+            values!inner(id, title, description),
             competency_levels!inner(level_number, level_name)
           `)
           .eq('job_family_id', profile.job_family_id)
@@ -187,7 +187,7 @@ export function OneToOneReviewForm({
           }));
 
           setCompetencies(comps);
-          setCompetencyRatings(comps.map(c => ({
+          setValueRatings(comps.map(c => ({
             competency_id: c.id,
             rating: 3,
             manager_comment: ''
@@ -305,7 +305,7 @@ export function OneToOneReviewForm({
         }
       }
 
-      for (const compRating of competencyRatings) {
+      for (const compRating of valueRatings) {
         if (compRating.manager_comment) {
           await supabase
             .from('review_competency_ratings')
@@ -594,7 +594,7 @@ export function OneToOneReviewForm({
                   <div>
                     <h3 className="font-semibold text-green-900">Monthly One to One #{reviewInstance.total_monthly_reviews + 1}</h3>
                     <p className="text-sm text-green-700 mt-1">
-                      In-depth review with competency assessment and development planning
+                      In-depth review with value assessment and development planning
                     </p>
                   </div>
                 </div>
@@ -648,11 +648,11 @@ export function OneToOneReviewForm({
                 })}
               </div>
 
-              {competencies.length > 0 && (
+              {values.length > 0 && (
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-slate-900">Competency Assessment</h3>
-                  {competencies.map((comp) => {
-                    const rating = competencyRatings.find(r => r.competency_id === comp.id);
+                  <h3 className="text-lg font-semibold text-slate-900">Value Assessment</h3>
+                  {values.map((comp) => {
+                    const rating = valueRatings.find(r => r.competency_id === comp.id);
                     return (
                       <div key={comp.id} className="card">
                         <h4 className="font-medium text-slate-900 mb-1">{comp.name}</h4>
@@ -668,7 +668,7 @@ export function OneToOneReviewForm({
                                 const idx = newRatings.findIndex(r => r.competency_id === comp.id);
                                 if (idx >= 0) {
                                   newRatings[idx].rating = value;
-                                  setCompetencyRatings(newRatings);
+                                  setValueRatings(newRatings);
                                 }
                               }}
                               className={`py-3 px-2 text-xs rounded-lg border-2 transition-colors ${
@@ -689,7 +689,7 @@ export function OneToOneReviewForm({
                             const idx = newRatings.findIndex(r => r.competency_id === comp.id);
                             if (idx >= 0) {
                               newRatings[idx].manager_comment = e.target.value;
-                              setCompetencyRatings(newRatings);
+                              setValueRatings(newRatings);
                             }
                           }}
                           className="input-field min-h-[60px]"
@@ -709,7 +709,7 @@ export function OneToOneReviewForm({
                                 const idx = newRatings.findIndex(r => r.competency_id === comp.id);
                                 if (idx >= 0) {
                                   newRatings[idx].evidence = e.target.value;
-                                  setCompetencyRatings(newRatings);
+                                  setValueRatings(newRatings);
                                 }
                               }}
                               className="input-field min-h-[60px]"
@@ -746,7 +746,7 @@ export function OneToOneReviewForm({
                 </p>
                 <ul className="list-disc list-inside text-slate-600 mt-3 space-y-1">
                   <li>6-month KPI average and trend analysis</li>
-                  <li>Overall competency score and development areas</li>
+                  <li>Overall value score and development areas</li>
                   <li>Employee self-assessment</li>
                   <li>Gap analysis between current and target performance</li>
                   <li>Recommended learning path</li>

@@ -600,7 +600,7 @@ export default function AdminCycleDetailView({ cycleId, onBack }: AdminCycleDeta
                                     )}
                                     {review.overall_competency_average != null && (
                                       <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-600">
-                                        Competency avg: {review.overall_competency_average.toFixed(1)}
+                                        Value avg: {review.overall_competency_average.toFixed(1)}
                                       </span>
                                     )}
                                     <span className={`px-2 py-0.5 rounded-full text-xs ${
@@ -657,7 +657,7 @@ export default function AdminCycleDetailView({ cycleId, onBack }: AdminCycleDeta
 
                                     {review.values_ratings && review.values_ratings.length > 0 && (
                                       <div>
-                                        <p className="text-xs font-medium text-gray-500 mb-2">Competency Ratings</p>
+                                        <p className="text-xs font-medium text-gray-500 mb-2">Value Ratings</p>
                                         <div className="space-y-2">
                                           {review.values_ratings.map((vr: any, i: number) => (
                                             <div key={i} className="bg-gray-50 rounded-lg p-3">
@@ -868,7 +868,7 @@ export default function AdminCycleDetailView({ cycleId, onBack }: AdminCycleDeta
                     )}
                     {review.values_ratings && review.values_ratings.length > 0 && (
                       <div>
-                        <p className="text-xs font-medium text-gray-500 mb-2">Competency Ratings</p>
+                        <p className="text-xs font-medium text-gray-500 mb-2">Value Ratings</p>
                         <div className="space-y-2">
                           {review.values_ratings.map((vr: any, i: number) => (
                             <div key={i} className="bg-gray-50 rounded-lg p-3">
@@ -909,7 +909,7 @@ export default function AdminCycleDetailView({ cycleId, onBack }: AdminCycleDeta
               <div>
                 <h3 className="font-bold text-gray-900 text-lg">Delete Completed Review</h3>
                 <p className="text-sm text-gray-600 mt-1">
-                  This will permanently delete the <strong>{format(new Date(deleteReviewTarget.review_month), 'MMMM yyyy')}</strong> review for <strong>{deleteReviewTarget.employee_name}</strong>, including all competency ratings, KPI data, summaries, and any associated moderation records.
+                  This will permanently delete the <strong>{format(new Date(deleteReviewTarget.review_month), 'MMMM yyyy')}</strong> review for <strong>{deleteReviewTarget.employee_name}</strong>, including all value ratings, KPI data, summaries, and any associated moderation records.
                 </p>
                 <p className="text-sm text-amber-700 bg-amber-50 rounded-lg px-3 py-2 mt-3 border border-amber-200">
                   The review template and employee assignment will not be affected. Other completed reviews will not be affected. This action cannot be undone.

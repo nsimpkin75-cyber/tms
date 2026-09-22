@@ -118,7 +118,7 @@ export default function ModerationReviewPanel() {
       const { data } = await query;
       const rawCases = data || [];
 
-      // Fetch values_ratings from linked reviews so the manager can see per-competency detail
+      // Fetch values_ratings from linked reviews so the manager can see per-value detail
       const effectiveReviewId = (c: any): string | null =>
         c.review_id || (c.source_type === 'competency_assessment' ? c.source_id : null) || null;
       const reviewIds = [...new Set(rawCases.map(effectiveReviewId).filter(Boolean))];
@@ -323,7 +323,7 @@ export default function ModerationReviewPanel() {
                         )}
                       </div>
                       <p className="text-sm text-slate-500 mt-0.5">
-                        {c.source_type === 'kpi_rating' ? 'KPI Rating' : 'Competency'} •
+                        {c.source_type === 'kpi_rating' ? 'KPI Rating' : 'Value'} •
                         Manager: {c.manager?.full_name || 'Unknown'} •
                         {format(new Date(c.created_at), 'dd MMM yyyy')}
                       </p>
@@ -430,11 +430,11 @@ export default function ModerationReviewPanel() {
                       </div>
                     )}
 
-                    {/* Per-competency detail: manager evidence + DL outcome */}
+                    {/* Per-value detail: manager evidence + DL outcome */}
                     {c.source_type === 'competency_assessment' && c.valuesRatings.length > 0 && (
                       <div>
                         <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3 flex items-center gap-1.5">
-                          <Award className="w-3.5 h-3.5" /> Competency Breakdown
+                          <Award className="w-3.5 h-3.5" /> Value Breakdown
                         </p>
                         <div className="space-y-3">
                           {/* Group by value */}

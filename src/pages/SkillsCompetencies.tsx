@@ -203,7 +203,7 @@ export default function SkillsCompetencies() {
     return (
       <div className="max-w-4xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">My Skills & Competencies</h1>
+          <h1 className="text-3xl font-bold text-gray-900">My Skills & Values</h1>
           <p className="text-gray-600 mt-1">View your skills assessment and development progress</p>
         </div>
 
@@ -228,7 +228,7 @@ export default function SkillsCompetencies() {
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Skills & Competencies</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Skills & Values</h1>
           <p className="text-gray-600 mt-1 text-sm sm:text-base">Manage team skills matrix and assessment cycles</p>
         </div>
         {activeProfile?.role === 'admin' && !isViewingAs && (
@@ -364,7 +364,7 @@ export default function SkillsCompetencies() {
               <Clock className="w-16 h-16 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">No Active Assessment Cycle</h3>
               <p className="text-gray-600 mb-4">
-                Start an assessment cycle to track team skills and competencies
+                Start an assessment cycle to track team skills and values
               </p>
               {activeProfile?.role === 'admin' && (
                 <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">

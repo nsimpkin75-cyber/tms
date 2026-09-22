@@ -59,7 +59,7 @@ interface DeptEmployee {
   oneToOneStatus: string | null;
   careerPlanStatus: string | null;
   avgSkillProficiency: number | null;
-  competencyAvg: number | null;
+  valueAvg: number | null;
   moderationFlag: boolean;
 }
 
@@ -355,11 +355,11 @@ export function LeadershipDashboard({ onNavigate }: LeadershipDashboardProps = {
         careerPlanByEmployee.set(cp.profile_id, cp.status);
       });
 
-      // Latest competency avg per employee
+      // Latest value avg per employee
       const competencyByEmployee = new Map<string, number>();
       reviews.forEach(r => {
-        if (!competencyByEmployee.has(r.employee_id)) {
-          competencyByEmployee.set(r.employee_id, Number(r.overall_competency_score));
+        if (!valueByEmployee.has(r.employee_id)) {
+          valueByEmployee.set(r.employee_id, Number(r.overall_competency_score));
         }
       });
 
@@ -382,7 +382,7 @@ export function LeadershipDashboard({ onNavigate }: LeadershipDashboardProps = {
         oneToOneStatus: latestMeetingByEmployee.get(p.id) ?? null,
         careerPlanStatus: careerPlanByEmployee.get(p.id) || null,
         avgSkillProficiency: null,
-        competencyAvg: competencyByEmployee.get(p.id) ?? null,
+        valueAvg: valueByEmployee.get(p.id) ?? null,
         moderationFlag: flaggedEmployeeIds.has(p.id),
       }));
 
@@ -428,7 +428,7 @@ export function LeadershipDashboard({ onNavigate }: LeadershipDashboardProps = {
       const oneToOneCompletion = meetings.length > 0 ? Math.round((completedMeetings / meetings.length) * 100) : 0;
       const activeCareerPlans = careerPlans.filter(cp => ['draft', 'sent_to_manager', 'manager_approved', 'in_progress'].includes(cp.status)).length;
 
-      // Avg performance and competency from completed reviews
+      // Avg performance and value from completed reviews
       const deptCompletedReviews = reviews.filter((r: any) => r.overall_average && Number(r.overall_average) > 0);
       const deptAvgPerformance = deptCompletedReviews.length > 0
         ? deptCompletedReviews.reduce((s: number, r: any) => s + Number(r.overall_average), 0) / deptCompletedReviews.length
@@ -1046,7 +1046,7 @@ export function LeadershipDashboard({ onNavigate }: LeadershipDashboardProps = {
 
           {deptTalentGrid.length === 0 ? (
             <div className="py-6 text-center text-sm text-slate-400">
-              No completed reviews with both performance and competency ratings found{deptNineBoxManagerId ? ' for this team leader' : ''}.
+              No completed reviews with both performance and value ratings found{deptNineBoxManagerId ? ' for this team leader' : ''}.
             </div>
           ) : (
             <>
@@ -1071,9 +1071,9 @@ export function LeadershipDashboard({ onNavigate }: LeadershipDashboardProps = {
                   <div className="min-w-[560px]">
                     <div className="grid grid-cols-4 gap-1 mb-1">
                       <div className="text-xs font-semibold text-slate-500 flex items-end pb-2 pl-1">Performance →</div>
-                      <div className="text-center text-xs font-semibold text-slate-500 py-2 bg-slate-100 rounded">Low Competency<br/><span className="font-normal">(1–2.9)</span></div>
-                      <div className="text-center text-xs font-semibold text-slate-500 py-2 bg-slate-100 rounded">Mid Competency<br/><span className="font-normal">(3–3.9)</span></div>
-                      <div className="text-center text-xs font-semibold text-slate-500 py-2 bg-slate-100 rounded">High Competency<br/><span className="font-normal">(4–5)</span></div>
+                      <div className="text-center text-xs font-semibold text-slate-500 py-2 bg-slate-100 rounded">Low Value<br/><span className="font-normal">(1–2.9)</span></div>
+                      <div className="text-center text-xs font-semibold text-slate-500 py-2 bg-slate-100 rounded">Mid Value<br/><span className="font-normal">(3–3.9)</span></div>
+                      <div className="text-center text-xs font-semibold text-slate-500 py-2 bg-slate-100 rounded">High Value<br/><span className="font-normal">(4–5)</span></div>
                     </div>
                     {[
                       { label: 'High Perf (4–5)', perfCat: 'high' as const, perfIdx: 0 },
@@ -1255,7 +1255,7 @@ export function LeadershipDashboard({ onNavigate }: LeadershipDashboardProps = {
                       <th className="text-left py-2.5 px-3 text-xs font-semibold text-slate-600">1:1 Status</th>
                       <th className="text-left py-2.5 px-3 text-xs font-semibold text-slate-600">Career Plan</th>
                       <th className="text-left py-2.5 px-3 text-xs font-semibold text-slate-600">Avg Skills</th>
-                      <th className="text-left py-2.5 px-3 text-xs font-semibold text-slate-600">Competency</th>
+                      <th className="text-left py-2.5 px-3 text-xs font-semibold text-slate-600">Value</th>
                       <th className="text-left py-2.5 px-3 text-xs font-semibold text-slate-600">Moderation</th>
                     </tr>
                   </thead>
@@ -1741,7 +1741,7 @@ export function LeadershipDashboard({ onNavigate }: LeadershipDashboardProps = {
               <div>
                 <h3 className="font-semibold text-slate-900">Performance Grid Overview</h3>
                 <p className="text-xs text-slate-500">
-                  Performance vs competency — {talentGrid.length} employee{talentGrid.length !== 1 ? 's' : ''} with completed reviews
+                  Performance vs value — {talentGrid.length} employee{talentGrid.length !== 1 ? 's' : ''} with completed reviews
                 </p>
               </div>
             </div>
@@ -1800,7 +1800,7 @@ export function LeadershipDashboard({ onNavigate }: LeadershipDashboardProps = {
 
           {talentGrid.length === 0 ? (
             <div className="py-6 text-center text-sm text-slate-400">
-              No completed reviews with both performance and competency ratings found{hasActiveNineBoxFilters ? ' matching the current filters' : ''}.
+              No completed reviews with both performance and value ratings found{hasActiveNineBoxFilters ? ' matching the current filters' : ''}.
             </div>
           ) : (
             <>
@@ -1925,16 +1925,16 @@ export function LeadershipDashboard({ onNavigate }: LeadershipDashboardProps = {
 
           {talentGrid.length === 0 ? (
             <div className="py-12 text-center text-sm text-slate-400 border-2 border-dashed border-slate-200 rounded-lg">
-              No completed reviews with both performance and competency ratings found{hasActiveNineBoxFilters ? ' matching the current filters' : ''}.
+              No completed reviews with both performance and value ratings found{hasActiveNineBoxFilters ? ' matching the current filters' : ''}.
             </div>
           ) : (
             <div className="overflow-x-auto">
               <div className="min-w-[600px]">
                 <div className="grid grid-cols-4 gap-1 mb-1">
                   <div className="text-xs font-semibold text-slate-500 flex items-end pb-2 pl-1">Performance →</div>
-                  <div className="text-center text-xs font-semibold text-slate-500 py-2 bg-slate-100 rounded">Low Competency<br/><span className="font-normal">(1–2.9)</span></div>
-                  <div className="text-center text-xs font-semibold text-slate-500 py-2 bg-slate-100 rounded">Mid Competency<br/><span className="font-normal">(3–3.9)</span></div>
-                  <div className="text-center text-xs font-semibold text-slate-500 py-2 bg-slate-100 rounded">High Competency<br/><span className="font-normal">(4–5)</span></div>
+                  <div className="text-center text-xs font-semibold text-slate-500 py-2 bg-slate-100 rounded">Low Value<br/><span className="font-normal">(1–2.9)</span></div>
+                  <div className="text-center text-xs font-semibold text-slate-500 py-2 bg-slate-100 rounded">Mid Value<br/><span className="font-normal">(3–3.9)</span></div>
+                  <div className="text-center text-xs font-semibold text-slate-500 py-2 bg-slate-100 rounded">High Value<br/><span className="font-normal">(4–5)</span></div>
                 </div>
                 {[
                   { label: 'High Perf (4–5)', perfIdx: 0 },

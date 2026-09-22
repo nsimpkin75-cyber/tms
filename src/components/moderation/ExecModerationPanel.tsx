@@ -98,8 +98,8 @@ export default function ExecModerationPanel({ readOnly = false }: ExecModeration
   const [submitting, setSubmitting] = useState(false);
   const [hasExecAccess, setHasExecAccess] = useState<boolean | null>(null);
 
-  // Per-case per-competency exec action state
-  const [compActions, setCompActions] = useState<Record<string, Record<string, CompetencyExecAction>>>({});
+  // Per-case per-value exec action state
+  const [compActions, setCompActions] = useState<Record<string, Record<string, ValueExecAction>>>({});
 
   useEffect(() => {
     if (profile?.id) checkExecAccess();
@@ -217,7 +217,7 @@ export default function ExecModerationPanel({ readOnly = false }: ExecModeration
   }
 
   function initActionsForCase(c: ModerationCase) {
-    const init: Record<string, CompetencyExecAction> = {};
+    const init: Record<string, ValueExecAction> = {};
     c.valuesRatings.forEach(vr => {
       const existing = c.exec_decisions.find(d => d.competency_id === vr.competency_id);
       const dlDecision = c.dept_lead_decisions.find(d => d.competency_id === vr.competency_id);
@@ -229,12 +229,12 @@ export default function ExecModerationPanel({ readOnly = false }: ExecModeration
     return init;
   }
 
-  function setCompAction(caseId: string, competencyId: string, update: Partial<CompetencyExecAction>) {
+  function setCompAction(caseId: string, valueId: string, update: Partial<CompetencyExecAction>) {
     setCompActions(prev => ({
       ...prev,
       [caseId]: {
         ...(prev[caseId] || {}),
-        [competencyId]: { ...(prev[caseId]?.[competencyId] || { action: '', rating: 3, comment: '' }), ...update },
+        [valueId]: { ...(prev[caseId]?.[valueId] || { action: '', rating: 3, comment: '' }), ...update },
       },
     }));
   }
@@ -323,7 +323,7 @@ export default function ExecModerationPanel({ readOnly = false }: ExecModeration
         }
       }
 
-      // Notify manager with per-competency notifications for any adjusted
+      // Notify manager with per-value notifications for any adjusted
       const adjustedDecisions = execDecisions.filter(d => d.action === 'adjusted');
       if (adjustedDecisions.length > 0) {
         await Promise.all(adjustedDecisions.map(d =>
@@ -331,7 +331,7 @@ export default function ExecModerationPanel({ readOnly = false }: ExecModeration
             recipient_id: c.manager_id,
             sender_id: profile.id,
             notification_type: 'moderation_final_rating_adjusted',
-            title: 'Final Competency Rating Adjusted by Executive',
+            title: 'Final Value Rating Adjusted by Executive',
             message: `The final rating for ${c.employee?.full_name} — ${d.competency_name}: rating ${d.dl_rating}/5 has been adjusted to ${d.final_rating}/5 by the Executive moderator.\n\nFeedback: ${d.exec_comment}`,
             competency_name: d.competency_name,
             original_rating: d.original_rating,
@@ -345,8 +345,8 @@ export default function ExecModerationPanel({ readOnly = false }: ExecModeration
           recipient_id: c.manager_id,
           sender_id: profile.id,
           notification_type: 'moderation_final_approved',
-          title: 'All Competency Ratings Approved by Executive',
-          message: `All competency ratings for ${c.employee?.full_name} have been approved by the Executive moderator. Ratings are now final.`,
+          title: 'All Value Ratings Approved by Executive',
+          message: `All value ratings for ${c.employee?.full_name} have been approved by the Executive moderator. Ratings are now final.`,
           is_read: false,
         });
       }
@@ -395,7 +395,7 @@ export default function ExecModerationPanel({ readOnly = false }: ExecModeration
           </div>
           <div>
             <h2 className="text-xl font-bold text-slate-900">Executive Moderation Queue</h2>
-            <p className="text-sm text-slate-500">Final approval per competency — your decision becomes the saved rating</p>
+            <p className="text-sm text-slate-500">Final approval per value — your decision becomes the saved rating</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -508,7 +508,7 @@ export default function ExecModerationPanel({ readOnly = false }: ExecModeration
                     {!readOnly && !canAction && c.current_step === 1 && ['in_review', 'pending'].includes(c.status) && (
                       <div className="flex items-center gap-2 px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-800">
                         <Clock className="w-4 h-4 shrink-0" />
-                        Awaiting Department Lead review. This case will reach exec once the dept lead has reviewed each competency.
+                        Awaiting Department Lead review. This case will reach exec once the dept lead has reviewed each value.
                       </div>
                     )}
 
@@ -520,7 +520,7 @@ export default function ExecModerationPanel({ readOnly = false }: ExecModeration
                       </div>
                     )}
 
-                    {/* Per-competency exec moderation rows */}
+                    {/* Per-value exec moderation rows */}
                     {c.valuesRatings.length > 0 && (
                       <div className="space-y-4">
                         {c.valuesRatings.map(vr => {
@@ -532,7 +532,7 @@ export default function ExecModerationPanel({ readOnly = false }: ExecModeration
 
                           return (
                             <div key={vr.competency_id} className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                              {/* Competency header */}
+                              {/* Value header */}
                               <div className="px-4 py-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between flex-wrap gap-2">
                                 <div>
                                   <p className="text-xs text-slate-400 uppercase tracking-wide mb-0.5">{vr.value_title}</p>
@@ -726,7 +726,7 @@ export default function ExecModerationPanel({ readOnly = false }: ExecModeration
                     {canAction && !readOnly && c.valuesRatings.length > 0 && (
                       <div className="flex items-center justify-between pt-2 border-t border-slate-200">
                         <div className="text-xs text-slate-500">
-                          {Object.values(caseActions).filter(a => a.action !== '').length} of {c.valuesRatings.length} competencies actioned
+                          {Object.values(caseActions).filter(a => a.action !== '').length} of {c.valuesRatings.length} values actioned
                         </div>
                         <button
                           onClick={() => submitCaseDecisions(c)}

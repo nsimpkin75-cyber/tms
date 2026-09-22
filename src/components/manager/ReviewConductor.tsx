@@ -59,14 +59,14 @@ interface ReviewConductorProps {
 
 export default function ReviewConductor({ meetingId, onClose }: ReviewConductorProps) {
   const [meeting, setMeeting] = useState<ReviewMeeting | null>(null);
-  const [activeTab, setActiveTab] = useState<'actions' | 'kpis' | 'competencies' | 'summary'>('actions');
+  const [activeTab, setActiveTab] = useState<'actions' | 'kpis' | 'values' | 'summary'>('actions');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   const [actions, setActions] = useState<Action[]>([]);
   const [kpiRatings, setKpiRatings] = useState<KPIRating[]>([]);
-  const [competencyAssessments, setCompetencyAssessments] = useState<CompetencyAssessment[]>([]);
-  const [availableCompetencies, setAvailableCompetencies] = useState<Competency[]>([]);
+  const [valueAssessments, setValueAssessments] = useState<CompetencyAssessment[]>([]);
+  const [availableValues, setAvailableValues] = useState<Competency[]>([]);
   const [summary, setSummary] = useState({
     overall_summary: '',
     areas_for_development: [] as string[],
@@ -77,7 +77,7 @@ export default function ReviewConductor({ meetingId, onClose }: ReviewConductorP
 
   const [seraModal, setSeraModal] = useState<{
     open: boolean;
-    type: 'kpi' | 'competency';
+    type: 'kpi' | 'value';
     index: number;
     rating: number;
     itemName: string;
@@ -87,7 +87,7 @@ export default function ReviewConductor({ meetingId, onClose }: ReviewConductorP
   } | null>(null);
 
   const [pendingModerationItems, setPendingModerationItems] = useState<{
-    type: 'kpi' | 'competency';
+    type: 'kpi' | 'value';
     index: number;
     rating: number;
     justification: string;
@@ -143,11 +143,11 @@ export default function ReviewConductor({ meetingId, onClose }: ReviewConductorP
         .eq('meeting_id', meetingId);
       setKpiRatings(kpiData || []);
 
-      const { data: competencyData } = await supabase
+      const { data: valueData } = await supabase
         .from('review_competency_assessments')
         .select('*')
         .eq('meeting_id', meetingId);
-      setCompetencyAssessments(competencyData || []);
+      setValueAssessments(valueData || []);
 
       const { data: summaryData } = await supabase
         .from('review_summaries')
@@ -176,7 +176,7 @@ export default function ReviewConductor({ meetingId, onClose }: ReviewConductorP
     }
   };
 
-  const fetchCompetencies = async () => {
+  const fetchValues = async () => {
     if (!meeting?.employee.job_family_id) return;
 
     try {
@@ -185,7 +185,7 @@ export default function ReviewConductor({ meetingId, onClose }: ReviewConductorP
         .select(`
           competency_id,
           required_level_id,
-          competencies!inner(id, title, description),
+          values!inner(id, title, description),
           competency_levels!inner(level_number, level_name)
         `)
         .eq('job_family_id', meeting.employee.job_family_id)
@@ -199,9 +199,9 @@ export default function ReviewConductor({ meetingId, onClose }: ReviewConductorP
         description: jfc.competencies.description
       }));
 
-      setAvailableCompetencies(competencies);
+      setAvailableCompetencies(values);
     } catch (error) {
-      console.error('Error fetching competencies:', error);
+      console.error('Error fetching values:', error);
     }
   };
 
@@ -288,14 +288,14 @@ export default function ReviewConductor({ meetingId, onClose }: ReviewConductorP
     }
   };
 
-  const saveCompetencies = async () => {
+  const saveValues = async () => {
     setSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      for (let i = 0; i < competencyAssessments.length; i++) {
-        const assessment = competencyAssessments[i];
+      for (let i = 0; i < valueAssessments.length; i++) {
+        const assessment = valueAssessments[i];
         const requiresApproval = assessment.manager_rating !== null && assessment.manager_rating >= 4;
         let savedId = assessment.id;
 
@@ -344,7 +344,7 @@ export default function ReviewConductor({ meetingId, onClose }: ReviewConductorP
         }
 
         if (savedId && assessment.manager_rating !== null && assessment.manager_rating >= 4) {
-          const modItem = pendingModerationItems.find(p => p.type === 'competency' && p.index === i);
+          const modItem = pendingModerationItems.find(p => p.type === 'value' && p.index === i);
           if (modItem) {
             await createModerationCase(
               'competency_assessment',
@@ -361,8 +361,8 @@ export default function ReviewConductor({ meetingId, onClose }: ReviewConductorP
       }
       await fetchMeetingDetails();
     } catch (error) {
-      console.error('Error saving competencies:', error);
-      alert('Failed to save competencies');
+      console.error('Error saving values:', error);
+      alert('Failed to save values');
     } finally {
       setSaving(false);
     }
@@ -432,22 +432,22 @@ export default function ReviewConductor({ meetingId, onClose }: ReviewConductorP
     }
   };
 
-  const handleCompetencyRatingChange = (index: number, newRating: number | null) => {
+  const handleValueRatingChange = (index: number, newRating: number | null) => {
     if (newRating !== null && newRating >= 4) {
-      const assessment = competencyAssessments[index];
+      const assessment = valueAssessments[index];
       setSeraModal({
         open: true,
-        type: 'competency',
+        type: 'value',
         index,
         rating: newRating,
-        itemName: assessment.competency_name || 'Competency',
+        itemName: assessment.competency_name || 'Value',
         comments: assessment.feedback,
       });
     } else {
       const newAssessments = [...competencyAssessments];
       newAssessments[index].manager_rating = newRating;
       newAssessments[index].requires_approval = newRating === 4 || newRating === 5;
-      setCompetencyAssessments(newAssessments);
+      setValueAssessments(newAssessments);
     }
   };
 
@@ -464,7 +464,7 @@ export default function ReviewConductor({ meetingId, onClose }: ReviewConductorP
       newAssessments[seraModal.index].manager_rating = seraModal.rating;
       newAssessments[seraModal.index].feedback = updatedComments;
       newAssessments[seraModal.index].requires_approval = true;
-      setCompetencyAssessments(newAssessments);
+      setValueAssessments(newAssessments);
     }
 
     setPendingModerationItems(prev => {
@@ -507,7 +507,7 @@ export default function ReviewConductor({ meetingId, onClose }: ReviewConductorP
           meetingId,
           actions,
           kpiRatings,
-          competencyAssessments,
+          valueAssessments,
         }),
       });
 
@@ -643,13 +643,13 @@ export default function ReviewConductor({ meetingId, onClose }: ReviewConductorP
     setKpiRatings(kpiRatings.filter((_, i) => i !== index));
   };
 
-  const addCompetency = () => {
-    if (availableCompetencies.length === 0) {
-      alert('No competencies available for this job family');
+  const addValue = () => {
+    if (availableValues.length === 0) {
+      alert('No values available for this job family');
       return;
     }
 
-    setCompetencyAssessments([
+    setValueAssessments([
       ...competencyAssessments,
       {
         competency_id: null,
@@ -662,8 +662,8 @@ export default function ReviewConductor({ meetingId, onClose }: ReviewConductorP
     ]);
   };
 
-  const removeCompetency = (index: number) => {
-    setCompetencyAssessments(competencyAssessments.filter((_, i) => i !== index));
+  const removeValue = (index: number) => {
+    setValueAssessments(valueAssessments.filter((_, i) => i !== index));
   };
 
   if (loading) {
@@ -739,14 +739,14 @@ export default function ReviewConductor({ meetingId, onClose }: ReviewConductorP
               {meeting.meeting_type === 'monthly_review' && (
                 <>
                   <button
-                    onClick={() => setActiveTab('competencies')}
+                    onClick={() => setActiveTab('values')}
                     className={`px-4 py-2 rounded-lg font-medium ${
-                      activeTab === 'competencies'
+                      activeTab === 'values'
                         ? 'bg-blue-100 text-blue-700'
                         : 'text-gray-600 hover:bg-gray-100'
                     }`}
                   >
-                    Competencies
+                    Values
                   </button>
                   <button
                     onClick={() => setActiveTab('summary')}
@@ -1000,50 +1000,50 @@ export default function ReviewConductor({ meetingId, onClose }: ReviewConductorP
               </div>
             )}
 
-            {activeTab === 'competencies' && (
+            {activeTab === 'values' && (
               <div className="space-y-4">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold">Competency Assessments</h3>
+                  <h3 className="text-lg font-semibold">Value Assessments</h3>
                   <div className="flex gap-2">
                     <button
-                      onClick={saveCompetencies}
+                      onClick={saveValues}
                       disabled={saving}
                       className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-blue-400 flex items-center gap-2"
                     >
                       <Save className="w-4 h-4" />
-                      {saving ? 'Saving...' : 'Save Competencies'}
+                      {saving ? 'Saving...' : 'Save Values'}
                     </button>
                     <button
-                      onClick={addCompetency}
+                      onClick={addValue}
                       className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
                     >
                       <Plus className="w-4 h-4" />
-                      Add Competency
+                      Add Value
                     </button>
                   </div>
                 </div>
 
-                {competencyAssessments.length === 0 ? (
+                {valueAssessments.length === 0 ? (
                   <div className="text-center py-12 bg-gray-50 rounded-lg">
-                    <p className="text-gray-500">No competencies assessed yet. Add your first assessment.</p>
+                    <p className="text-gray-500">No values assessed yet. Add your first assessment.</p>
                   </div>
                 ) : (
-                  competencyAssessments.map((assessment, index) => (
+                  valueAssessments.map((assessment, index) => (
                     <div key={index} className="border border-gray-200 rounded-lg p-4 space-y-3">
                       <div className="flex justify-between items-start">
                         <select
                           value={assessment.competency_id || ''}
                           onChange={(e) => {
-                            const comp = availableCompetencies.find(c => c.id === e.target.value);
+                            const comp = availableValues.find(c => c.id === e.target.value);
                             const newAssessments = [...competencyAssessments];
                             newAssessments[index].competency_id = e.target.value || null;
                             newAssessments[index].competency_name = comp?.name || '';
-                            setCompetencyAssessments(newAssessments);
+                            setValueAssessments(newAssessments);
                           }}
                           className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                         >
-                          <option value="">Select competency</option>
-                          {availableCompetencies.map((comp) => (
+                          <option value="">Select value</option>
+                          {availableValues.map((comp) => (
                             <option key={comp.id} value={comp.id}>
                               {comp.name}
                             </option>
@@ -1061,9 +1061,9 @@ export default function ReviewConductor({ meetingId, onClose }: ReviewConductorP
                         onChange={(e) => {
                           const newAssessments = [...competencyAssessments];
                           newAssessments[index].feedback = e.target.value;
-                          setCompetencyAssessments(newAssessments);
+                          setValueAssessments(newAssessments);
                         }}
-                        placeholder="Provide detailed feedback on this competency"
+                        placeholder="Provide detailed feedback on this value"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                         rows={3}
                       />
@@ -1079,7 +1079,7 @@ export default function ReviewConductor({ meetingId, onClose }: ReviewConductorP
                           </label>
                           <select
                             value={assessment.manager_rating ?? ''}
-                            onChange={(e) => handleCompetencyRatingChange(index, e.target.value ? parseInt(e.target.value) : null)}
+                            onChange={(e) => handleValueRatingChange(index, e.target.value ? parseInt(e.target.value) : null)}
                             className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${assessment.manager_rating !== null && assessment.manager_rating >= 4 ? 'border-amber-400 bg-amber-50' : 'border-gray-300'}`}
                           >
                             <option value="">Select rating</option>

@@ -296,7 +296,7 @@ export default function TeamPerformanceOverview() {
                   Performance
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Competency
+                  Value
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Category
@@ -395,7 +395,7 @@ export default function TeamPerformanceOverview() {
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Period</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Overall</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Performance</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Competency</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Value</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
                     </tr>
                   </thead>

@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase';
 
 interface SeraValidationModalProps {
   rating: number;
-  ratingType: 'kpi' | 'competency';
+  ratingType: 'kpi' | 'value';
   ratingLabel: string;
   itemName: string;
   employeeName: string;
@@ -62,7 +62,7 @@ export default function SeraValidationModal({
           ratingLabel,
           itemName: ratingType === 'kpi' ? undefined : itemName,
           kpiName: ratingType === 'kpi' ? itemName : undefined,
-          competencyName: ratingType === 'competency' ? itemName : undefined,
+          valueName: ratingType === 'value' ? itemName : undefined,
           employeeName,
           managerComments: commentsToValidate,
           targetValue,

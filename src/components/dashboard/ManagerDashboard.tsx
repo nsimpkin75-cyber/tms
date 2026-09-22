@@ -1211,7 +1211,7 @@ export function ManagerDashboard({ onNavigate }: ManagerDashboardProps = {}) {
                           </div>
                         )}
 
-                        {/* Dept Lead decisions per competency */}
+                        {/* Dept Lead decisions per value */}
                         {c.dept_lead_decisions.length > 0 ? (
                           <div>
                             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
@@ -1250,7 +1250,7 @@ export function ManagerDashboard({ onNavigate }: ManagerDashboardProps = {}) {
                           <p className="text-xs text-slate-400 italic">
                             {c.status === 'pending' || c.status === 'in_review'
                               ? 'Awaiting Dept Lead review — no decisions recorded yet.'
-                              : 'No per-competency decisions recorded.'}
+                              : 'No per-value decisions recorded.'}
                           </p>
                         )}
                       </div>
@@ -1411,7 +1411,7 @@ export function ManagerDashboard({ onNavigate }: ManagerDashboardProps = {}) {
             className="p-4 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-left transition-colors"
           >
             <p className="font-medium text-slate-900 text-sm">Schedule Monthly Review</p>
-            <p className="text-xs text-slate-500 mt-1">Comprehensive review with competencies</p>
+            <p className="text-xs text-slate-500 mt-1">Comprehensive review with values</p>
           </button>
           <button
             onClick={() => setShowReviews(true)}

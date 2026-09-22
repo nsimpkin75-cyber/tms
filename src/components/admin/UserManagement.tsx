@@ -1020,7 +1020,7 @@ export default function UserManagement() {
                     >
                       <option value="">Select Admin Type</option>
                       <option value="full_admin">Full Admin - Full system view and can view as others</option>
-                      <option value="job_families_admin">Job Families Admin - Manage job families and competencies</option>
+                      <option value="job_families_admin">Job Families Admin - Manage job families and values</option>
                       <option value="people_admin">People Admin - Manage users, passwords, and training</option>
                     </select>
                     <p className="text-xs text-gray-500 mt-1">
@@ -1060,7 +1060,7 @@ export default function UserManagement() {
                   onChange={(entries) => setFormData({ ...formData, previous_roles: entries })}
                 />
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Competency Level</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Value Level</label>
                   <select
                     value={formData.competency_level}
                     onChange={(e) => setFormData({ ...formData, competency_level: e.target.value as 'Employee' | 'Manager' | 'Senior Leader' })}
@@ -1070,7 +1070,7 @@ export default function UserManagement() {
                     <option value="Manager">Manager</option>
                     <option value="Senior Leader">Senior Leader</option>
                   </select>
-                  <p className="text-xs text-gray-500 mt-1">Determines which competency prompts and descriptions are shown in 1:1 reviews</p>
+                  <p className="text-xs text-gray-500 mt-1">Determines which value prompts and descriptions are shown in 1:1 reviews</p>
                 </div>
                 {(formData.role === 'leadership' || formData.role === 'admin') && (
                   <div className="flex items-center">

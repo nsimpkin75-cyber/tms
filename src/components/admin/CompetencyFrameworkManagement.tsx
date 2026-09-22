@@ -51,6 +51,14 @@ const EMPTY_COMPETENCY_FORM = {
   senior_leader_what_great_looks_like: '',
 };
 
+const EMPTY_VALUE_FORM = {
+  title: '',
+  statement: '',
+  emoji: '',
+  sort_order: 0,
+  is_active: true,
+};
+
 export default function CompetencyFrameworkManagement() {
   const { t } = useLanguage();
   const [values, setValues] = useState<Value[]>([]);
@@ -65,14 +73,7 @@ export default function CompetencyFrameworkManagement() {
   const [frameworkDescription, setFrameworkDescription] = useState('');
   const [tempDescription, setTempDescription] = useState('');
 
-  const [valueForm, setValueForm] = useState({
-    title: '',
-    statement: '',
-    emoji: '',
-    sort_order: 0,
-    is_active: true,
-  });
-
+  const [valueForm, setValueForm] = useState({ ...EMPTY_VALUE_FORM });
   const [competencyForm, setCompetencyForm] = useState({ ...EMPTY_COMPETENCY_FORM });
 
   useEffect(() => {
@@ -98,7 +99,7 @@ export default function CompetencyFrameworkManagement() {
         .from('competency_frameworks')
         .select('id')
         .maybeSingle();
-      if (!framework) throw new Error('No competency framework found');
+      if (!framework) throw new Error('No value framework found');
       const { error } = await supabase
         .from('competency_frameworks')
         .update({ description: tempDescription })
@@ -150,6 +151,7 @@ export default function CompetencyFrameworkManagement() {
     }
   };
 
+  // Value CRUD
   const handleSaveValue = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -193,6 +195,7 @@ export default function CompetencyFrameworkManagement() {
     }
   };
 
+  // Competency CRUD
   const handleSaveCompetency = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedValue) return;
@@ -230,8 +233,8 @@ export default function CompetencyFrameworkManagement() {
       resetCompetencyForm();
       fetchValues();
     } catch (error) {
-      console.error('Error saving competency:', error);
-      alert('Failed to save competency');
+      console.error('Error saving value:', error);
+      alert('Failed to save value');
     }
   };
 
@@ -241,7 +244,7 @@ export default function CompetencyFrameworkManagement() {
       if (error) throw error;
       fetchValues();
     } catch (error) {
-      console.error('Error toggling competency:', error);
+      console.error('Error toggling value:', error);
     }
   };
 
@@ -253,8 +256,8 @@ export default function CompetencyFrameworkManagement() {
       if (selectedCompetency?.id === id) setSelectedCompetency(null);
       fetchValues();
     } catch (error) {
-      console.error('Error deleting competency:', error);
-      alert('Failed to delete competency');
+      console.error('Error deleting value:', error);
+      alert('Failed to delete value');
     }
   };
 
@@ -293,7 +296,7 @@ export default function CompetencyFrameworkManagement() {
   };
 
   const resetValueForm = () => {
-    setValueForm({ title: '', statement: '', emoji: '', sort_order: 0, is_active: true });
+    setValueForm({ ...EMPTY_VALUE_FORM });
   };
 
   const resetCompetencyForm = () => {
@@ -311,7 +314,7 @@ export default function CompetencyFrameworkManagement() {
       color: 'blue',
       fields: [
         { key: 'employee_evidence_prompt', label: 'Evidence Prompt', placeholder: 'What evidence should an employee provide?' },
-        { key: 'employee_what_good_looks_like', label: 'What Good Looks Like', placeholder: 'Describe good performance for this competency at Employee level...' },
+        { key: 'employee_what_good_looks_like', label: 'What Good Looks Like', placeholder: 'Describe good performance for this value at Employee level...' },
         { key: 'employee_what_great_looks_like', label: 'What Great Looks Like', placeholder: 'Describe great/exceptional performance at Employee level...' },
       ],
     },
@@ -321,7 +324,7 @@ export default function CompetencyFrameworkManagement() {
       color: 'teal',
       fields: [
         { key: 'manager_evidence_prompt', label: 'Evidence Prompt', placeholder: 'What evidence should a manager provide?' },
-        { key: 'manager_what_good_looks_like', label: 'What Good Looks Like', placeholder: 'Describe good performance for this competency at Manager level...' },
+        { key: 'manager_what_good_looks_like', label: 'What Good Looks Like', placeholder: 'Describe good performance for this value at Manager level...' },
         { key: 'manager_what_great_looks_like', label: 'What Great Looks Like', placeholder: 'Describe great/exceptional performance at Manager level...' },
       ],
     },
@@ -331,7 +334,7 @@ export default function CompetencyFrameworkManagement() {
       color: 'slate',
       fields: [
         { key: 'senior_leader_evidence_prompt', label: 'Evidence Prompt', placeholder: 'What evidence should a senior leader provide?' },
-        { key: 'senior_leader_what_good_looks_like', label: 'What Good Looks Like', placeholder: 'Describe good performance for this competency at Senior Leader level...' },
+        { key: 'senior_leader_what_good_looks_like', label: 'What Good Looks Like', placeholder: 'Describe good performance for this value at Senior Leader level...' },
         { key: 'senior_leader_what_great_looks_like', label: 'What Great Looks Like', placeholder: 'Describe great/exceptional performance at Senior Leader level...' },
       ],
     },
@@ -372,6 +375,7 @@ export default function CompetencyFrameworkManagement() {
       </div>
 
       <div className="grid grid-cols-12 gap-6">
+        {/* Values sidebar */}
         <div className="col-span-4">
           <div className="bg-white rounded-lg border border-gray-200 p-4">
             <h3 className="font-semibold text-gray-900 mb-3">Values</h3>
@@ -422,6 +426,7 @@ export default function CompetencyFrameworkManagement() {
           </div>
         </div>
 
+        {/* Competencies panel */}
         <div className="col-span-8">
           {selectedValue ? (
             <div className="space-y-4">
@@ -514,16 +519,17 @@ export default function CompetencyFrameworkManagement() {
                 </div>
               </div>
 
+              {/* Selected competency detail */}
               {selectedCompetency && (
                 <div className="bg-white rounded-lg border border-gray-200 p-6">
                   <div className="mb-4">
-                    <h4 className="font-semibold text-gray-900">Competency Detail</h4>
+                    <h4 className="font-semibold text-gray-900">Value Detail</h4>
                     <p className="text-sm text-gray-600 mt-1">{selectedCompetency.title}</p>
                   </div>
 
                   {selectedCompetency.competency_statement && (
                     <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                      <p className="text-xs font-semibold text-gray-600 mb-1">Competency Statement</p>
+                      <p className="text-xs font-semibold text-gray-600 mb-1">Value Statement</p>
                       <p className="text-sm text-gray-700">{selectedCompetency.competency_statement}</p>
                     </div>
                   )}
@@ -583,6 +589,7 @@ export default function CompetencyFrameworkManagement() {
         </div>
       </div>
 
+      {/* Value modal */}
       {showValueModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-6 max-w-lg w-full">
@@ -633,6 +640,7 @@ export default function CompetencyFrameworkManagement() {
         </div>
       )}
 
+      {/* Competency modal */}
       {showCompetencyModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-white rounded-lg p-6 max-w-4xl w-full my-8">
@@ -658,13 +666,13 @@ export default function CompetencyFrameworkManagement() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Competency Statement</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Value Statement</label>
                   <textarea
                     value={competencyForm.competency_statement}
                     onChange={(e) => setCompetencyForm({ ...competencyForm, competency_statement: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     rows={2}
-                    placeholder="Overall statement describing this competency..."
+                    placeholder="Overall statement describing this value..."
                   />
                 </div>
 
@@ -737,6 +745,7 @@ export default function CompetencyFrameworkManagement() {
         </div>
       )}
 
+      {/* Description modal */}
       {showDescriptionModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full">
@@ -746,7 +755,7 @@ export default function CompetencyFrameworkManagement() {
               onChange={(e) => setTempDescription(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               rows={6}
-              placeholder="Provide guidance for managers on how to use the competency framework..."
+              placeholder="Provide guidance for managers on how to use the value framework..."
             />
             <div className="flex gap-3 mt-6">
               <button type="button" onClick={updateFrameworkDescription} className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">Save</button>

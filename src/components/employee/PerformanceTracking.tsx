@@ -106,7 +106,7 @@ export default function PerformanceTracking() {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-gray-900">My Performance</h2>
-        <p className="text-gray-600 mt-1">Track your performance and competency scores over time</p>
+        <p className="text-gray-600 mt-1">Track your performance and value scores over time</p>
       </div>
 
       {latestRating && (
@@ -193,7 +193,7 @@ export default function PerformanceTracking() {
                   <Brain className="w-6 h-6 text-purple-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">Competency Score</h3>
+                  <h3 className="font-semibold text-gray-900">Value Score</h3>
                   <p className="text-xs text-gray-600">Based on skill assessments</p>
                 </div>
               </div>
@@ -246,7 +246,7 @@ export default function PerformanceTracking() {
                   Performance
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Competency
+                  Value
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Category
@@ -312,8 +312,8 @@ export default function PerformanceTracking() {
         <h4 className="font-semibold text-blue-900 mb-2">How Ratings are Calculated</h4>
         <ul className="text-sm text-blue-800 space-y-1">
           <li>• <strong>Performance Score:</strong> Average of all KPI ratings (1-5 scale)</li>
-          <li>• <strong>Competency Score:</strong> Average of all competency assessments (1-4 scale)</li>
-          <li>• <strong>Overall Rating:</strong> 60% Performance + 40% Competency (normalized to 1-5 scale)</li>
+          <li>• <strong>Value Score:</strong> Average of all value assessments (1-4 scale)</li>
+          <li>• <strong>Overall Rating:</strong> 60% Performance + 40% Value (normalized to 1-5 scale)</li>
           <li>• <strong>Categories:</strong> Outstanding (4.5+), Exceeds Expectations (3.5-4.5), Meets Expectations (3.0-3.5), Developing (2.0-3.0), Needs Improvement (&lt;2.0)</li>
         </ul>
       </div>

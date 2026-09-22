@@ -313,14 +313,14 @@ export default function MyReviews() {
     });
   }
 
-  function renderCompetencySection(review: MonthlyReview) {
-    if (competencyPendingModeration(review)) {
+  function renderValueSection(review: MonthlyReview) {
+    if (valuePendingModeration(review)) {
       return (
         <div>
-          <SectionHeading icon={<Award className="w-4 h-4" />} label="Competency Ratings" />
+          <SectionHeading icon={<Award className="w-4 h-4" />} label="Value Ratings" />
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-2">
             <Lock className="w-4 h-4 text-amber-500 flex-shrink-0" />
-            <p className="text-sm text-amber-700">Competency ratings are being reviewed and will be visible once finalised.</p>
+            <p className="text-sm text-amber-700">Value ratings are being reviewed and will be visible once finalised.</p>
           </div>
         </div>
       );
@@ -333,7 +333,7 @@ export default function MyReviews() {
 
     return (
       <div>
-        <SectionHeading icon={<Award className="w-4 h-4" />} label="Competency Ratings" />
+        <SectionHeading icon={<Award className="w-4 h-4" />} label="Value Ratings" />
         <div className="space-y-3">
           {ratings.map((r, i) => (
             <div key={i} className="bg-gray-50 rounded-lg p-3">
@@ -428,7 +428,7 @@ export default function MyReviews() {
   }
 
   function renderScoreSummary(review: MonthlyReview) {
-    const hidComp = competencyPendingModeration(review);
+    const hidComp = valuePendingModeration(review);
     return (
       <div className="grid grid-cols-3 gap-3">
         {review.overall_kpi_average != null && (
@@ -441,12 +441,12 @@ export default function MyReviews() {
         {hidComp ? (
           <div className="bg-amber-50 rounded-xl p-3 text-center flex flex-col items-center justify-center">
             <Lock className="w-4 h-4 text-amber-400 mb-1" />
-            <p className="text-xs text-amber-600 font-medium">Competency</p>
+            <p className="text-xs text-amber-600 font-medium">Value</p>
             <p className="text-xs text-amber-500 mt-0.5">Under review</p>
           </div>
         ) : review.overall_competency_score != null ? (
           <div className="bg-teal-50 rounded-xl p-3 text-center">
-            <p className="text-xs text-teal-600 font-medium mb-1">Competency</p>
+            <p className="text-xs text-teal-600 font-medium mb-1">Value</p>
             <p className="text-2xl font-bold text-teal-900">{Number(review.overall_competency_score).toFixed(1)}</p>
             <p className="text-xs text-teal-400 mt-0.5">/ 5</p>
           </div>
@@ -512,10 +512,10 @@ export default function MyReviews() {
         <div className="bg-white border border-gray-200 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-1">
             <Award className="w-4 h-4 text-amber-500" />
-            <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Competency</span>
+            <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Value</span>
           </div>
           <p className="text-2xl font-bold text-gray-900">
-            {latestReview && competencyPendingModeration(latestReview)
+            {latestReview && valuePendingModeration(latestReview)
               ? <span className="text-sm text-gray-400 font-normal">Under review</span>
               : latestReview?.overall_competency_score != null
                 ? Number(latestReview.overall_competency_score).toFixed(1)
@@ -556,7 +556,7 @@ export default function MyReviews() {
             monthlyReviews.map(review => {
               const isExpanded = expandedId === review.id;
               const monthLabel = format(new Date(review.review_month + 'T12:00:00'), 'MMMM yyyy');
-              const hidComp = competencyPendingModeration(review);
+              const hidComp = valuePendingModeration(review);
 
               return (
                 <div key={review.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
@@ -611,8 +611,8 @@ export default function MyReviews() {
                       {/* KPIs */}
                       {renderKpiSection(review)}
 
-                      {/* Competencies */}
-                      {renderCompetencySection(review)}
+                      {/* Values */}
+                      {renderValueSection(review)}
 
                       {/* Actions */}
                       {renderActionsSection(review)}

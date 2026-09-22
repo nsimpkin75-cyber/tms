@@ -59,7 +59,7 @@ export default function SkillsMatrix() {
           <Grid3x3 className="w-7 h-7 text-blue-600" />
           <h1 className="text-3xl font-bold text-gray-900">Skills Matrix</h1>
         </div>
-        <p className="text-gray-500 ml-10">Track competency across the organisation by Type, Category and Topic</p>
+        <p className="text-gray-500 ml-10">Track value across the organisation by Type, Category and Topic</p>
       </div>
 
       <div className="flex flex-wrap gap-1 border-b border-gray-200">

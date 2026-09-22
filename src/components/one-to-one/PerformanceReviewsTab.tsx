@@ -95,7 +95,7 @@ export default function PerformanceReviewsTab({ employeeId }: PerformanceReviews
               )}
               {review.overall_competency_rating && (
                 <div>
-                  <p className="text-sm font-medium text-gray-700 mb-1">Competency Rating</p>
+                  <p className="text-sm font-medium text-gray-700 mb-1">Value Rating</p>
                   <div className="flex items-center gap-2">
                     <Award className="w-5 h-5 text-blue-600" />
                     <span className="text-2xl font-bold text-gray-900">{review.overall_competency_rating}/5</span>

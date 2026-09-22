@@ -85,8 +85,8 @@ export default function BackfillOneToOne() {
   const [cycleKPIs, setCycleKPIs] = useState<CycleKPI[]>([]);
   const [kpiEntries, setKpiEntries] = useState<KPIEntry[]>([]);
   const [manualKpiName, setManualKpiName] = useState('');
-  const [competencyScore, setCompetencyScore] = useState<number>(3);
-  const [competencyComment, setCompetencyComment] = useState('');
+  const [valueScore, setValueScore] = useState<number>(3);
+  const [valueComment, setValueComment] = useState('');
   const [managerSummary, setManagerSummary] = useState('');
   const [performanceScore, setPerformanceScore] = useState<number>(3);
   const [actions, setActions] = useState<ActionItem[]>([{ action_text: '', owner: 'employee', due_date: '' }]);
@@ -225,8 +225,8 @@ export default function BackfillOneToOne() {
     setCycleKPIs([]);
     setKpiEntries([]);
     setManualKpiName('');
-    setCompetencyScore(3);
-    setCompetencyComment('');
+    setValueScore(3);
+    setValueComment('');
     setManagerSummary('');
     setPerformanceScore(3);
     setActions([{ action_text: '', owner: 'employee', due_date: '' }]);
@@ -245,7 +245,7 @@ export default function BackfillOneToOne() {
       const kpiAvg = scoredKPIs.length > 0
         ? parseFloat((scoredKPIs.reduce((s, k) => s + k.score, 0) / scoredKPIs.length).toFixed(2))
         : null;
-      const compAvg = competencyScore || null;
+      const compAvg = valueScore || null;
       const overallAvg = kpiAvg != null && compAvg != null
         ? parseFloat(((kpiAvg + compAvg) / 2).toFixed(2))
         : (kpiAvg ?? compAvg);
@@ -274,15 +274,15 @@ export default function BackfillOneToOne() {
         };
       });
 
-      // Build values_ratings for competency
-      const valuesRatings = competencyComment || competencyScore
+      // Build values_ratings for value
+      const valuesRatings = valueComment || valueScore
         ? [{
             value_id: 'backfill',
             value_title: 'Overall Performance',
             competency_id: 'backfill',
             competency_title: 'Overall Performance',
-            manager_rating: competencyScore,
-            manager_comment: competencyComment,
+            manager_rating: valueScore,
+            manager_comment: valueComment,
           }]
         : [];
 
@@ -614,10 +614,10 @@ export default function BackfillOneToOne() {
               </div>
 
               <div>
-                <h4 className="text-sm font-semibold text-gray-800 mb-3">Competency Rating</h4>
+                <h4 className="text-sm font-semibold text-gray-800 mb-3">Value Rating</h4>
                 <select
-                  value={competencyScore}
-                  onChange={e => setCompetencyScore(Number(e.target.value))}
+                  value={valueScore}
+                  onChange={e => setValueScore(Number(e.target.value))}
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white mb-2"
                 >
                   {COMPETENCY_OPTIONS.map(o => (
@@ -626,8 +626,8 @@ export default function BackfillOneToOne() {
                 </select>
                 <input
                   type="text"
-                  value={competencyComment}
-                  onChange={e => setCompetencyComment(e.target.value)}
+                  value={valueComment}
+                  onChange={e => setValueComment(e.target.value)}
                   placeholder="Evidence or comment..."
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                 />

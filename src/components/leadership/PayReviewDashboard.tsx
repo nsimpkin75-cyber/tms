@@ -160,7 +160,7 @@ export default function PayReviewDashboard() {
       'Department',
       'Manager',
       'Avg Performance',
-      'Avg Competency',
+      'Avg Value',
       'Pay Review',
       'Bonus',
       'Promotion'
@@ -194,7 +194,7 @@ export default function PayReviewDashboard() {
     avgPerformance: filteredEmployees.length > 0
       ? filteredEmployees.reduce((sum, e) => sum + e.average_performance_score, 0) / filteredEmployees.length
       : 0,
-    avgCompetency: filteredEmployees.length > 0
+    avgValue: filteredEmployees.length > 0
       ? filteredEmployees.reduce((sum, e) => sum + e.average_competency_score, 0) / filteredEmployees.length
       : 0
   };
@@ -226,7 +226,7 @@ export default function PayReviewDashboard() {
               <p className="text-3xl font-bold text-blue-700">{selectedEmployee.average_performance_score.toFixed(2)}</p>
             </div>
             <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <p className="text-sm text-green-900 font-medium mb-2">Average Competency</p>
+              <p className="text-sm text-green-900 font-medium mb-2">Average Value</p>
               <p className="text-3xl font-bold text-green-700">{selectedEmployee.average_competency_score.toFixed(2)}</p>
             </div>
           </div>
@@ -444,7 +444,7 @@ export default function PayReviewDashboard() {
                     <p className="text-2xl font-bold text-blue-600">
                       {employee.average_performance_score.toFixed(1)}
                     </p>
-                    <p className="text-sm text-gray-600 mt-2">Competency</p>
+                    <p className="text-sm text-gray-600 mt-2">Value</p>
                     <p className="text-2xl font-bold text-green-600">
                       {employee.average_competency_score.toFixed(1)}
                     </p>

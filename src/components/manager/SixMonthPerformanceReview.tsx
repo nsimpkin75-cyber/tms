@@ -28,7 +28,7 @@ export default function SixMonthPerformanceReview() {
   const [periodEnd, setPeriodEnd] = useState('');
 
   const [averagePerformance, setAveragePerformance] = useState(0);
-  const [averageCompetency, setAverageCompetency] = useState(0);
+  const [averageValue, setAverageValue] = useState(0);
   const [trendAnalysis, setTrendAnalysis] = useState('');
   const [managerSummary, setManagerSummary] = useState('');
   const [strengths, setStrengths] = useState('');
@@ -193,7 +193,7 @@ export default function SixMonthPerformanceReview() {
           review_period_end: end.toISOString().split('T')[0],
           monthly_review_ids: selectedReviews,
           average_performance_score: averagePerformance,
-          average_competency_score: averageCompetency,
+          average_competency_score: averageValue,
           trend_analysis: { trend: trendAnalysis, reviews: selected },
           manager_summary: managerSummary,
           strengths,
@@ -212,7 +212,7 @@ export default function SixMonthPerformanceReview() {
       if (error) throw error;
 
       // If submitted and has high ratings, notify head of dept for approval
-      if (status === 'submitted' && averagePerformance >= 4 && averageCompetency >= 4) {
+      if (status === 'submitted' && averagePerformance >= 4 && averageValue >= 4) {
         const { data: hod } = await supabase.rpc('get_head_of_department', {
           p_employee_id: selectedEmployee
         });
@@ -351,10 +351,10 @@ export default function SixMonthPerformanceReview() {
 
                     <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-green-900">Avg Competency</span>
+                        <span className="text-sm font-medium text-green-900">Avg Value</span>
                         <Award className="w-5 h-5 text-green-600" />
                       </div>
-                      <p className="text-3xl font-bold text-green-700">{averageCompetency.toFixed(2)}</p>
+                      <p className="text-3xl font-bold text-green-700">{averageValue.toFixed(2)}</p>
                       <p className="text-xs text-green-600 mt-1">out of 4.0</p>
                     </div>
 

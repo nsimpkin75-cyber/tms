@@ -9,7 +9,7 @@ import SkillsMatrixPanel from '../skills-matrix/SkillsMatrixPanel';
 interface MonthlyOneToOneTabProps {
   meetingId: string;
   employeeId: string;
-  competencyLevel?: string;
+  valueLevel?: string;
 }
 
 interface KPIRunningAverage {
@@ -144,7 +144,7 @@ function SeraRatingBanner({ feedback, onDismiss }: { feedback: SeraRatingFeedbac
   );
 }
 
-export default function MonthlyOneToOneTab({ meetingId, employeeId, competencyLevel = 'Employee' }: MonthlyOneToOneTabProps) {
+export default function MonthlyOneToOneTab({ meetingId, employeeId, valueLevel = 'Employee' }: MonthlyOneToOneTabProps) {
   const { profile } = useAuth();
   const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
   const [review, setReview] = useState<MonthlyReview | null>(null);
@@ -162,7 +162,7 @@ export default function MonthlyOneToOneTab({ meetingId, employeeId, competencyLe
   const [showWeeklyCheckins, setShowWeeklyCheckins] = useState(false);
   const [showPreviousNotes, setShowPreviousNotes] = useState(false);
   const [seraRatingFeedbacks, setSeraRatingFeedbacks] = useState<Record<string, SeraRatingFeedback | null>>({});
-  const [weeklyActionsByCompetency, setWeeklyActionsByCompetency] = useState<Record<string, string[]>>({});
+  const [weeklyActionsByValue, setWeeklyActionsByValue] = useState<Record<string, string[]>>({});
   const seraTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   useEffect(() => {
@@ -319,21 +319,21 @@ export default function MonthlyOneToOneTab({ meetingId, employeeId, competencyLe
     }
   }
 
-  function getCompetencyFields(competency: any) {
-    if (competencyLevel === 'Manager') return {
-      evidence_prompt: competency.manager_evidence_prompt,
-      what_good_looks_like: competency.manager_what_good_looks_like,
-      what_great_looks_like: competency.manager_what_great_looks_like,
+  function getValueFields(value: any) {
+    if (valueLevel === 'Manager') return {
+      evidence_prompt: value.manager_evidence_prompt,
+      what_good_looks_like: value.manager_what_good_looks_like,
+      what_great_looks_like: value.manager_what_great_looks_like,
     };
-    if (competencyLevel === 'Senior Leader') return {
-      evidence_prompt: competency.senior_leader_evidence_prompt,
-      what_good_looks_like: competency.senior_leader_what_good_looks_like,
-      what_great_looks_like: competency.senior_leader_what_great_looks_like,
+    if (valueLevel === 'Senior Leader') return {
+      evidence_prompt: value.senior_leader_evidence_prompt,
+      what_good_looks_like: value.senior_leader_what_good_looks_like,
+      what_great_looks_like: value.senior_leader_what_great_looks_like,
     };
     return {
-      evidence_prompt: competency.employee_evidence_prompt,
-      what_good_looks_like: competency.employee_what_good_looks_like,
-      what_great_looks_like: competency.employee_what_great_looks_like,
+      evidence_prompt: value.employee_evidence_prompt,
+      what_good_looks_like: value.employee_what_good_looks_like,
+      what_great_looks_like: value.employee_what_great_looks_like,
     };
   }
 
@@ -348,7 +348,7 @@ export default function MonthlyOneToOneTab({ meetingId, employeeId, competencyLe
 
       const ratings: ValuesRating[] = [];
       for (const value of valuesData) {
-        const { data: competenciesData } = await supabase
+        const { data: valuesData } = await supabase
           .from('competencies')
           .select(`
             id, title, competency_statement,
@@ -359,9 +359,9 @@ export default function MonthlyOneToOneTab({ meetingId, employeeId, competencyLe
           .eq('value_id', value.id)
           .eq('is_active', true)
           .order('sort_order');
-        if (!competenciesData) continue;
-        for (const comp of competenciesData) {
-          const fields = getCompetencyFields(comp);
+        if (!valuesData) continue;
+        for (const comp of valuesData) {
+          const fields = getValueFields(comp);
           ratings.push({
             value_id: value.id,
             value_title: value.title,
@@ -376,7 +376,7 @@ export default function MonthlyOneToOneTab({ meetingId, employeeId, competencyLe
       }
       return ratings;
     } catch (error) {
-      console.error('Error loading values competencies:', error);
+      console.error('Error loading values values:', error);
       return [];
     }
   }
@@ -405,7 +405,7 @@ export default function MonthlyOneToOneTab({ meetingId, employeeId, competencyLe
         const savedManualKpis = existingReview.manual_kpi_entries || [];
         setManualKpis(savedManualKpis);
 
-        // For active/draft reviews, overlay latest competency text onto saved ratings
+        // For active/draft reviews, overlay latest value text onto saved ratings
         // so edits to prompts/guidance are always reflected. Preserve manager_rating and
         // manager_comment. Completed reviews use their saved snapshot unchanged.
         const isCompleted = existingReview.status === 'submitted' || existingReview.status === 'completed';
@@ -424,7 +424,7 @@ export default function MonthlyOneToOneTab({ meetingId, employeeId, competencyLe
               manager_comment: saved.manager_comment,
             };
           });
-          // Add any new competencies not yet in the saved review
+          // Add any new values not yet in the saved review
           valuesRatings.forEach(fresh => {
             if (!mergedRatings.find(r => r.competency_id === fresh.competency_id)) {
               mergedRatings.push(fresh);
@@ -617,22 +617,22 @@ export default function MonthlyOneToOneTab({ meetingId, employeeId, competencyLe
 
       const actionsLines = outstandingActions.map(a => `- ${a.action_text} (${a.status})`).join('\n');
       const newActionsLines = newActions.filter(a => a.action_text.trim()).map(a => `- ${a.action_text} (owner: ${a.owner})`).join('\n');
-      const weeklyActions = (weeklyActionsByCompetency._all || []).join('\n');
+      const weeklyActions = (weeklyActionsByValue._all || []).join('\n');
 
       const overallCompAvg = review.overall_competency_average;
 
       const prompt = `Generate a structured monthly 1:1 review summary based on the following data:
 
 REVIEW MONTH: ${format(currentMonth, 'MMMM yyyy')}
-COMPETENCY LEVEL: ${competencyLevel}
+COMPETENCY LEVEL: ${valueLevel}
 
 KPI PERFORMANCE:
 ${kpiLines || 'No KPI data recorded this month.'}
 Overall KPI Average: ${kpiAvgVal !== undefined ? `${kpiAvgVal.toFixed(2)}/5` : 'N/A'}
 
 VALUES & COMPETENCIES:
-${competencyLines || 'No competency evidence recorded.'}
-Overall Competency Average: ${overallCompAvg !== undefined ? `${overallCompAvg.toFixed(2)}/5` : 'N/A'}
+${valueLines || 'No value evidence recorded.'}
+Overall Value Average: ${overallCompAvg !== undefined ? `${overallCompAvg.toFixed(2)}/5` : 'N/A'}
 
 WEEKLY ACTIONS THIS MONTH:
 ${weeklyActions || 'No weekly actions recorded.'}
@@ -666,7 +666,7 @@ Write a concise, professional summary in this exact structure:
         body: { prompt, type: 'monthly_1on1_summary' }
       });
 
-      const summary = data?.summary || buildFallbackSummary(kpiLines, competencyLines, actionsLines, newActionsLines, kpiAvgVal, overallCompAvg);
+      const summary = data?.summary || buildFallbackSummary(kpiLines, valueLines, actionsLines, newActionsLines, kpiAvgVal, overallCompAvg);
       setReview(prev => prev ? { ...prev, sera_draft_summary: summary, manager_summary: summary } : null);
     } catch (error) {
       console.error('Error generating Opal summary:', error);
@@ -680,7 +680,7 @@ Write a concise, professional summary in this exact structure:
 
   function buildFallbackSummary(
     kpiLines: string,
-    competencyLines: string,
+    valueLines: string,
     actionsLines: string,
     newActionsLines: string,
     overallKpiAvg?: number,
@@ -691,10 +691,10 @@ Write a concise, professional summary in this exact structure:
 Monthly 1:1 review for ${month}. Discussed KPI progress, values & behaviours, and agreed next steps.
 
 **Strengths & Positive Impact**
-${competencyLines ? competencyLines.split('\n').filter(l => l.includes('5') || l.includes('3')).slice(0, 3).join('\n') || '- See competency evidence above.' : '- See competency evidence above.'}
+${valueLines ? valueLines.split('\n').filter(l => l.includes('5') || l.includes('3')).slice(0, 3).join('\n') || '- See value evidence above.' : '- See value evidence above.'}
 
 **Development Points & Concerns**
-${competencyLines ? competencyLines.split('\n').filter(l => l.includes('1')).slice(0, 3).join('\n') || '- No significant concerns noted.' : '- No significant concerns noted.'}
+${valueLines ? valueLines.split('\n').filter(l => l.includes('1')).slice(0, 3).join('\n') || '- No significant concerns noted.' : '- No significant concerns noted.'}
 
 **KPI Update**
 ${kpiLines || '- No KPI data recorded this month.'}
@@ -705,7 +705,7 @@ ${newActionsLines || '- No new actions agreed.'}
 ${actionsLines ? `Outstanding: ${actionsLines}` : ''}
 
 **Overall Summary**
-Performance for ${month}. KPI average: ${overallKpiAvg !== undefined ? `${overallKpiAvg.toFixed(2)}/5` : 'N/A'}. Competency average: ${overallCompAvg !== undefined ? `${overallCompAvg.toFixed(2)}/5` : 'N/A'}.`;
+Performance for ${month}. KPI average: ${overallKpiAvg !== undefined ? `${overallKpiAvg.toFixed(2)}/5` : 'N/A'}. Value average: ${overallCompAvg !== undefined ? `${overallCompAvg.toFixed(2)}/5` : 'N/A'}.`;
   }
 
   async function saveReview(submitStatus: 'draft' | 'submitted') {
@@ -814,7 +814,7 @@ Performance for ${month}. KPI average: ${overallKpiAvg !== undefined ? `${overal
   const moderationWillTrigger = overallCompAvg !== undefined && overallCompAvg >= 4;
 
   const hasWeeklyKpiData = kpiAverages.some(k => k.entry_count > 0);
-  const weeklyActionsAll = weeklyActionsByCompetency._all || [];
+  const weeklyActionsAll = weeklyActionsByValue._all || [];
 
   if (loading) {
     return (
@@ -1218,7 +1218,7 @@ Performance for ${month}. KPI average: ${overallKpiAvg !== undefined ? `${overal
               </span>
             )}
             <span className="text-xs bg-blue-50 text-blue-600 border border-blue-200 px-2.5 py-1 rounded-full font-medium">
-              {competencyLevel} level
+              {valueLevel} level
             </span>
           </div>
         </div>
@@ -1231,13 +1231,13 @@ Performance for ${month}. KPI average: ${overallKpiAvg !== undefined ? `${overal
         {moderationWillTrigger && (
           <div className="flex items-start gap-2 p-3 bg-orange-50 border border-orange-200 rounded-xl mb-4 text-xs text-orange-800">
             <AlertCircle className="w-3.5 h-3.5 text-orange-500 flex-shrink-0 mt-0.5" />
-            <span>Current competency average is <strong>{overallCompAvg?.toFixed(2)}</strong> — this review will go to moderation on submission.</span>
+            <span>Current value average is <strong>{overallCompAvg?.toFixed(2)}</strong> — this review will go to moderation on submission.</span>
           </div>
         )}
 
         {review && review.values_ratings.length === 0 ? (
           <div className="p-4 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-500">
-            No competencies found. Please add competencies in the Admin Competency Framework settings.
+            No values found. Please add values in the Admin Value Framework settings.
           </div>
         ) : review && (
           <div className="space-y-8">
@@ -1248,7 +1248,7 @@ Performance for ${month}. KPI average: ${overallKpiAvg !== undefined ? `${overal
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="bg-gray-50 border-b border-gray-200">
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 w-1/4">Competency Statement</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 w-1/4">Value Statement</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 w-2/5">Question</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 w-24">Rating</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600">Evidence</th>
@@ -1271,7 +1271,7 @@ Performance for ${month}. KPI average: ${overallKpiAvg !== undefined ? `${overal
                             </td>
                             <td className="px-4 py-4">
                               <p className="text-xs text-gray-700 leading-relaxed">
-                                {vr.evidence_prompt || 'Describe observed behaviours and examples for this competency.'}
+                                {vr.evidence_prompt || 'Describe observed behaviours and examples for this value.'}
                               </p>
                             </td>
                             <td className="px-4 py-4">
@@ -1340,7 +1340,7 @@ Performance for ${month}. KPI average: ${overallKpiAvg !== undefined ? `${overal
       )}
 
       <div>
-        <h4 className="text-base font-semibold text-gray-900 mb-4">Skills & Competencies Matrix</h4>
+        <h4 className="text-base font-semibold text-gray-900 mb-4">Skills & Values Matrix</h4>
         <SkillsMatrixPanel
           employeeId={employeeId}
           monthlyReviewId={review?.id}
@@ -1443,7 +1443,7 @@ Performance for ${month}. KPI average: ${overallKpiAvg !== undefined ? `${overal
           {!review?.manager_summary && !review?.sera_draft_summary && (
             <div className="py-6 text-center text-gray-400 text-sm mb-4">
               <Sparkles className="w-8 h-8 mx-auto mb-2 opacity-40" />
-              <p>Click "Generate Summary" to create an AI-assisted draft using KPI data, competency ratings, and actions. You can then edit it before submitting.</p>
+              <p>Click "Generate Summary" to create an AI-assisted draft using KPI data, value ratings, and actions. You can then edit it before submitting.</p>
             </div>
           )}
           <textarea

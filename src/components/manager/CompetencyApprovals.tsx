@@ -142,9 +142,9 @@ export default function CompetencyApprovals() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">Competency Rating Approvals</h2>
+        <h2 className="text-2xl font-bold text-gray-900">Value Rating Approvals</h2>
         <p className="text-gray-600 mt-1">
-          Review and approve expert-level (rating 4) competency assessments
+          Review and approve expert-level (rating 4) value assessments
         </p>
       </div>
 
@@ -206,7 +206,7 @@ export default function CompetencyApprovals() {
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="mb-3">
                   <h4 className="font-semibold text-gray-900 mb-1">
-                    Competency: {approval.competency_assessment.competency_name}
+                    Value: {approval.competency_assessment.competency_name}
                   </h4>
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-600">Manager Rating:</span>

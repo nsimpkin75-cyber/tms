@@ -142,7 +142,7 @@ export default function RatingApprovalWorkflow() {
 
       if (approvalError) throw approvalError;
 
-      // Update the actual competency rating
+      // Update the actual value rating
       if (selectedApproval.competency_rating_id) {
         const { error: ratingError } = await supabase
           .from('review_competency_ratings')

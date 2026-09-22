@@ -13,7 +13,7 @@ import SkillsMatrixPanel from '../skills-matrix/SkillsMatrixPanel';
 interface ReviewFlowProps {
   meetingId: string;
   employeeId: string;
-  competencyLevel?: string;
+  valueLevel?: string;
   onBack: () => void;
   onSubmitted?: () => void;
   previousWeeklySummaries?: WeeklySummary[];
@@ -117,7 +117,7 @@ function computeSeraFeedback(_rating: number, _comment: string): SeraFeedback | 
 
 const STEPS = [
   { id: 1, label: 'Performance', icon: BarChart2 },
-  { id: 2, label: 'Competencies', icon: Award },
+  { id: 2, label: 'Values', icon: Award },
   { id: 3, label: 'Skills & Dev', icon: BookOpen },
   { id: 4, label: 'Actions & Comments', icon: MessageSquare },
   { id: 5, label: 'Submit', icon: CheckCircle },
@@ -126,7 +126,7 @@ const STEPS = [
 export default function ReviewFlow({
   meetingId,
   employeeId,
-  competencyLevel = 'Employee',
+  valueLevel = 'Employee',
   onBack,
   onSubmitted,
   previousWeeklySummaries = [],
@@ -154,7 +154,7 @@ export default function ReviewFlow({
   const [seraSystemPrompt, setSeraSystemPrompt] = useState<string | null>(null);
   const [employeeFullName, setEmployeeFullName] = useState<string>('Employee');
 
-  function mergeCompetencyText(saved: ValuesRating[], fresh: ValuesRating[]): ValuesRating[] {
+  function mergeValueText(saved: ValuesRating[], fresh: ValuesRating[]): ValuesRating[] {
     if (saved.length === 0) return fresh;
     const freshMap = new Map(fresh.map(r => [r.competency_id, r]));
     const merged = saved.map(s => {
@@ -185,12 +185,12 @@ export default function ReviewFlow({
       loadValuesCompetencies(),
       loadCarryoverActions(),
     ]);
-    // Overlay latest competency text onto any saved draft ratings (completed reviews are
-    // left unchanged by mergeCompetencyText which checks review.status).
+    // Overlay latest value text onto any saved draft ratings (completed reviews are
+    // left unchanged by mergeValueText which checks review.status).
     if (freshRatings.length > 0) {
-      setValuesRatings(prev => mergeCompetencyText(prev, freshRatings));
+      setValuesRatings(prev => mergeValueText(prev, freshRatings));
       setReview(prev => prev && prev.status !== 'completed' && prev.status !== 'submitted'
-        ? { ...prev, values_ratings: mergeCompetencyText(prev.values_ratings, freshRatings) }
+        ? { ...prev, values_ratings: mergeValueText(prev.values_ratings, freshRatings) }
         : prev);
     }
 
@@ -393,8 +393,8 @@ export default function ReviewFlow({
           .eq('is_active', true)
           .order('sort_order');
         (comps || []).forEach(c => {
-          const isManager = competencyLevel === 'Manager';
-          const isSL = competencyLevel === 'Senior Leader';
+          const isManager = valueLevel === 'Manager';
+          const isSL = valueLevel === 'Senior Leader';
           ratings.push({
             value_id: v.id,
             value_title: v.title,
@@ -411,7 +411,7 @@ export default function ReviewFlow({
       }
       return ratings;
     } catch (e) {
-      console.error('loadValuesCompetencies', e);
+      console.error('loadValuesValues', e);
       return [];
     }
   }
@@ -498,8 +498,8 @@ export default function ReviewFlow({
     // Capture all context before the async closure to avoid stale references
     const capturedRating = newRating;
     const capturedComment = commentTrimmed;
-    const capturedCompetencyTitle = vr.competency_title;
-    const capturedCompetencyStatement = vr.competency_statement;
+    const capturedValueTitle = vr.competency_title;
+    const capturedValueStatement = vr.competency_statement;
     const capturedWhatGood = vr.what_good_looks_like;
     const capturedWhatGreat = vr.what_great_looks_like;
     const capturedEmployeeName = employeeFullName;
@@ -519,12 +519,12 @@ export default function ReviewFlow({
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
           body: JSON.stringify({
             rating: capturedRating,
-            ratingType: 'competency',
+            ratingType: 'value',
             ratingLabel: ratingLabels[capturedRating] || String(capturedRating),
             managerComments: capturedComment,
             employeeName: capturedEmployeeName,
-            competencyName: capturedCompetencyTitle,
-            competencyStatement: capturedCompetencyStatement,
+            valueName: capturedValueTitle,
+            valueStatement: capturedValueStatement,
             whatGoodLooksLike: capturedWhatGood,
             whatGreatLooksLike: capturedWhatGreat,
             seraSystemPrompt: capturedSeraSystemPrompt || undefined,
@@ -583,7 +583,7 @@ export default function ReviewFlow({
 
       const prompt = `You are writing a monthly 1:1 review summary for a manager to give to their employee. Write in a professional but warm, direct tone — like a good manager talking to their team member. Avoid corporate jargon. Make it feel personal and actionable, not templated.
 
-Use ALL of the manager's competency comments below — they form the core evidence of the review. Do not summarise them into vague phrases; reference the specific behaviours and outcomes the manager mentioned.
+Use ALL of the manager's value comments below — they form the core evidence of the review. Do not summarise them into vague phrases; reference the specific behaviours and outcomes the manager mentioned.
 
 REVIEW MONTH: ${format(currentMonth, 'MMMM yyyy')}
 
@@ -594,8 +594,8 @@ KPI Average: ${kpiAvg !== undefined ? `${kpiAvg}/5` : 'N/A'}
 MANAGER COMPETENCY COMMENTS (use all of these in the summary):
 ${valuesRatings.filter(vr => vr.manager_comment.trim()).map(vr =>
   `- ${vr.value_title} / ${vr.competency_title} (rated ${vr.manager_rating}/5): "${vr.manager_comment}"`
-).join('\n') || 'No competency comments recorded.'}
-Competency Average: ${compAvg !== undefined ? `${compAvg}/5` : 'N/A'}
+).join('\n') || 'No value comments recorded.'}
+Value Average: ${compAvg !== undefined ? `${compAvg}/5` : 'N/A'}
 
 ACTIONS FROM WEEKLY CHECK-INS THIS MONTH:
 ${weeklyActionLines || 'None.'}
@@ -614,7 +614,7 @@ Write the summary in this format — keep it concise but substantive:
 [3-4 sentences summarising this month's performance in plain language. Reference specific things the manager noted.]
 
 **What's going well**
-[2-4 bullet points drawn directly from the manager's competency comments and KPI performance]
+[2-4 bullet points drawn directly from the manager's value comments and KPI performance]
 
 **Areas to develop**
 [1-3 bullet points referencing specific development areas the manager raised]
@@ -626,7 +626,7 @@ Write the summary in this format — keep it concise but substantive:
 [Bullet list combining outstanding and new actions]
 
 **Overall**
-[1-2 sentences. Include: KPI avg ${kpiAvg !== undefined ? `${kpiAvg}/5` : 'N/A'}, competency avg ${compAvg !== undefined ? `${compAvg}/5` : 'N/A'}, overall avg ${overall !== undefined ? `${overall}/5` : 'N/A'}.]`;
+[1-2 sentences. Include: KPI avg ${kpiAvg !== undefined ? `${kpiAvg}/5` : 'N/A'}, value avg ${compAvg !== undefined ? `${compAvg}/5` : 'N/A'}, overall avg ${overall !== undefined ? `${overall}/5` : 'N/A'}.]`;
 
       const { data } = await supabase.functions.invoke('generate-review-summary', {
         body: { prompt, type: 'monthly_1on1_summary' }
@@ -647,10 +647,10 @@ Write the summary in this format — keep it concise but substantive:
 
   function buildFallback(kpiAvg?: number, compAvg?: number, overall?: number, carryover?: string, newActs?: string): string {
     return `**Summary**
-Monthly 1:1 review for ${format(currentMonth, 'MMMM yyyy')}. KPI average: ${kpiAvg !== undefined ? `${kpiAvg}/5` : 'N/A'}. Competency average: ${compAvg !== undefined ? `${compAvg}/5` : 'N/A'}.
+Monthly 1:1 review for ${format(currentMonth, 'MMMM yyyy')}. KPI average: ${kpiAvg !== undefined ? `${kpiAvg}/5` : 'N/A'}. Value average: ${compAvg !== undefined ? `${compAvg}/5` : 'N/A'}.
 
 **Strengths**
-- See competency evidence above.
+- See value evidence above.
 
 **Development Areas**
 - See areas rated 1 or below expectations.
@@ -663,7 +663,7 @@ ${newActs || '- No new actions agreed.'}
 ${carryover ? `Outstanding: ${carryover}` : ''}
 
 **Overall Position**
-Overall average for ${format(currentMonth, 'MMMM yyyy')}: ${overall !== undefined ? `${overall}/5` : 'N/A'}. KPI avg: ${kpiAvg !== undefined ? `${kpiAvg}/5` : 'N/A'}. Competency avg: ${compAvg !== undefined ? `${compAvg}/5` : 'N/A'}.`;
+Overall average for ${format(currentMonth, 'MMMM yyyy')}: ${overall !== undefined ? `${overall}/5` : 'N/A'}. KPI avg: ${kpiAvg !== undefined ? `${kpiAvg}/5` : 'N/A'}. Value avg: ${compAvg !== undefined ? `${compAvg}/5` : 'N/A'}.`;
   }
 
   async function saveProgress(submitStatus?: 'draft' | 'completed') {
@@ -738,7 +738,7 @@ Overall average for ${format(currentMonth, 'MMMM yyyy')}: ${overall !== undefine
           .eq('id', meetingId);
 
         // Create a single moderation case for the whole review when moderation is required.
-        // The moderation panels load per-competency data from the review's values_ratings.
+        // The moderation panels load per-value data from the review's values_ratings.
         if (requiresModeration && reviewId) {
           // Avoid duplicate cases if the review was previously completed and re-submitted
           const { data: existing } = await supabase
@@ -945,7 +945,7 @@ Overall average for ${format(currentMonth, 'MMMM yyyy')}: ${overall !== undefine
           />
         )}
         {step === 2 && (
-          <StepCompetencies
+          <StepValues
             valueGroups={valueGroups}
             valuesRatings={valuesRatings}
             updateValuesRating={updateValuesRating}
@@ -953,7 +953,7 @@ Overall average for ${format(currentMonth, 'MMMM yyyy')}: ${overall !== undefine
             setSeraFeedbacks={setSeraFeedbacks}
             compAvg={compAvg}
             moderationTrigger={moderationTrigger}
-            competencyLevel={competencyLevel}
+            valueLevel={valueLevel}
             isSubmitted={isSubmitted}
             isViewingAs={!!isViewingAs}
             currentUserId={profile?.id}
@@ -1016,7 +1016,7 @@ Overall average for ${format(currentMonth, 'MMMM yyyy')}: ${overall !== undefine
         </div>
         <div className="flex items-center gap-2">
           {step === 2 && !canProceed() && !isViewingAs && (
-            <span className="text-xs text-red-600 font-medium">Please complete all competency ratings before proceeding.</span>
+            <span className="text-xs text-red-600 font-medium">Please complete all value ratings before proceeding.</span>
           )}
           {isViewingAs && !isSubmitted && (
             <span className="text-xs text-orange-600 font-medium">View As — read-only</span>
@@ -1267,7 +1267,7 @@ function StepPerformance({ kpiEntries, setKpiEntries, hasCycle, kpiAvg, isSubmit
   );
 }
 
-function StepCompetencies({ valueGroups, valuesRatings, updateValuesRating, seraFeedbacks, setSeraFeedbacks, compAvg, moderationTrigger, competencyLevel, isSubmitted, isViewingAs, currentUserId, employeeId }: {
+function StepCompetencies({ valueGroups, valuesRatings, updateValuesRating, seraFeedbacks, setSeraFeedbacks, compAvg, moderationTrigger, valueLevel, isSubmitted, isViewingAs, currentUserId, employeeId }: {
   valueGroups: { valueId: string; valueTitle: string; rows: ValuesRating[] }[];
   valuesRatings: ValuesRating[];
   updateValuesRating: (i: number, field: 'manager_rating' | 'manager_comment' | 'employee_comment', value: any) => void;
@@ -1275,7 +1275,7 @@ function StepCompetencies({ valueGroups, valuesRatings, updateValuesRating, sera
   setSeraFeedbacks: React.Dispatch<React.SetStateAction<Record<string, SeraFeedback | null>>>;
   compAvg: number | undefined;
   moderationTrigger: boolean;
-  competencyLevel: string;
+  valueLevel: string;
   isSubmitted: boolean;
   isViewingAs: boolean;
   currentUserId: string | undefined;
@@ -1286,23 +1286,23 @@ function StepCompetencies({ valueGroups, valuesRatings, updateValuesRating, sera
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">Step 2: Values & Competencies</h3>
+          <h3 className="text-lg font-semibold text-gray-900">Step 2: Values & Values</h3>
           <p className="text-sm text-gray-500 mt-0.5">Rate observed behaviours with evidence — Opal coaches as you type</p>
         </div>
         <div className="flex items-center gap-3">
           {compAvg !== undefined && (
             <div className="text-right">
-              <p className="text-xs text-gray-500">Competency Average</p>
+              <p className="text-xs text-gray-500">Value Average</p>
               <p className="text-2xl font-bold text-blue-700">{compAvg.toFixed(2)} <span className="text-base font-normal text-gray-400">/ 5</span></p>
             </div>
           )}
-          <span className="text-xs bg-blue-50 text-blue-600 border border-blue-200 px-2.5 py-1 rounded-full font-medium">{competencyLevel}</span>
+          <span className="text-xs bg-blue-50 text-blue-600 border border-blue-200 px-2.5 py-1 rounded-full font-medium">{valueLevel}</span>
         </div>
       </div>
 
       <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-800">
         <Info className="w-3.5 h-3.5 text-blue-500 flex-shrink-0 mt-0.5" />
-        <span>Scores contributing to an overall competency average of 4 or above will go to moderation.</span>
+        <span>Scores contributing to an overall value average of 4 or above will go to moderation.</span>
       </div>
 
       {moderationTrigger && (
@@ -1315,7 +1315,7 @@ function StepCompetencies({ valueGroups, valuesRatings, updateValuesRating, sera
       {valueGroups.length === 0 && (
         <div className="text-center py-12 text-gray-400">
           <Award className="w-10 h-10 mx-auto mb-3 opacity-40" />
-          <p className="text-sm">No competencies found. Set them up in Admin.</p>
+          <p className="text-sm">No values found. Set them up in Admin.</p>
         </div>
       )}
 
@@ -1342,7 +1342,7 @@ function StepCompetencies({ valueGroups, valuesRatings, updateValuesRating, sera
                           onChange={e => updateValuesRating(overallIdx, 'employee_comment', e.target.value)}
                           disabled={isSubmitted}
                           rows={3}
-                          placeholder="Share your perspective on this competency..."
+                          placeholder="Share your perspective on this value..."
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 resize-y"
                         />
                       ) : (
@@ -1669,7 +1669,7 @@ function StepActionsComments({
             <Sparkles className="w-5 h-5 text-blue-600" />
             <div>
               <p className="text-sm font-semibold text-gray-900">Manager Summary</p>
-              <p className="text-xs text-gray-400">Opal-assisted — includes KPI avg, competency avg, actions, key points</p>
+              <p className="text-xs text-gray-400">Opal-assisted — includes KPI avg, value avg, actions, key points</p>
             </div>
           </div>
           {!isSubmitted && (
@@ -1686,11 +1686,11 @@ function StepActionsComments({
           {!review?.manager_summary && (
             <div className="py-6 text-center text-gray-400 text-sm mb-2">
               <Sparkles className="w-8 h-8 mx-auto mb-2 opacity-30" />
-              <p>Generate a summary using all data — KPI avg, competency ratings, actions and weekly notes.</p>
+              <p>Generate a summary using all data — KPI avg, value ratings, actions and weekly notes.</p>
               {(kpiAvg !== undefined || compAvg !== undefined) && (
                 <p className="mt-2 text-xs">
                   {kpiAvg !== undefined && `KPI avg: ${kpiAvg}/5  `}
-                  {compAvg !== undefined && `Competency avg: ${compAvg}/5`}
+                  {compAvg !== undefined && `Value avg: ${compAvg}/5`}
                 </p>
               )}
             </div>
@@ -1747,7 +1747,7 @@ function StepSubmit({ review, kpiAvg, compAvg, overallAvg, moderationTrigger, kp
         )}
         {compAvg !== undefined && (
           <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center">
-            <p className="text-xs text-emerald-600 font-medium mb-1">Competency Average</p>
+            <p className="text-xs text-emerald-600 font-medium mb-1">Value Average</p>
             <p className="text-3xl font-bold text-emerald-700">{compAvg.toFixed(2)}</p>
             <p className="text-xs text-emerald-500 mt-0.5">/ 5</p>
           </div>
@@ -1766,7 +1766,7 @@ function StepSubmit({ review, kpiAvg, compAvg, overallAvg, moderationTrigger, kp
           <AlertCircle className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-semibold text-orange-800">Moderation Required</p>
-            <p className="text-xs text-orange-700 mt-0.5">Competency average of {compAvg?.toFixed(2)} is 4 or above. This review will enter the moderation queue after submission.</p>
+            <p className="text-xs text-orange-700 mt-0.5">Value average of {compAvg?.toFixed(2)} is 4 or above. This review will enter the moderation queue after submission.</p>
           </div>
         </div>
       )}
@@ -1786,8 +1786,8 @@ function StepSubmit({ review, kpiAvg, compAvg, overallAvg, moderationTrigger, kp
           }
         </div>
         <div className="border border-gray-200 rounded-xl p-4">
-          <p className="font-semibold text-gray-700 mb-2 text-xs uppercase tracking-wide">Competencies ({valuesRatings.length})</p>
-          {valuesRatings.length === 0 ? <p className="text-xs text-gray-400">No competencies rated</p> :
+          <p className="font-semibold text-gray-700 mb-2 text-xs uppercase tracking-wide">Values ({valuesRatings.length})</p>
+          {valuesRatings.length === 0 ? <p className="text-xs text-gray-400">No values rated</p> :
             valuesRatings.map(vr => (
               <div key={vr.competency_id} className="flex items-center justify-between py-1 border-b last:border-0 border-gray-100">
                 <span className="text-xs text-gray-700 truncate">{vr.competency_title}</span>

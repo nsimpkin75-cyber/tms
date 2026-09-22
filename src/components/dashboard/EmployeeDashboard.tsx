@@ -485,10 +485,10 @@ export function EmployeeDashboard({ onNavigate }: EmployeeDashboardProps = {}) {
           </div>
         </div>
 
-        {/* Competency average (last completed review) */}
+        {/* Value average (last completed review) */}
         <div className="card p-5 flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Competency</p>
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Value</p>
             <div className="p-2 bg-teal-100 rounded-lg">
               <Award className="w-4 h-4 text-teal-600" />
             </div>

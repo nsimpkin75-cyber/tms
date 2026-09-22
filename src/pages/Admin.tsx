@@ -22,7 +22,7 @@ import RoleProfileRecommendations from '../components/admin/RoleProfileRecommend
 import SkillsMatrixAdmin from '../components/skills-matrix/SkillsMatrixAdmin';
 import BrandingCentre from '../components/admin/BrandingCentre';
 
-type TabType = 'users' | 'org-settings' | 'training' | 'plans' | 'jobs' | 'reports' | 'history' | 'criteria' | 'roadmap' | 'marti' | 'review-templates' | 'competencies' | 'language' | 'sm-admin' | 'moderation-workflow' | 'exec-moderators' | 'review-cycles' | 'review-report' | 'backfill-oto' | 'role-recommendations' | 'branding';
+type TabType = 'users' | 'org-settings' | 'training' | 'plans' | 'jobs' | 'reports' | 'history' | 'criteria' | 'roadmap' | 'marti' | 'review-templates' | 'values' | 'language' | 'sm-admin' | 'moderation-workflow' | 'exec-moderators' | 'review-cycles' | 'review-report' | 'backfill-oto' | 'role-recommendations' | 'branding';
 
 interface NavSection {
   title: string;
@@ -60,7 +60,7 @@ export default function Admin() {
         { id: 'role-recommendations' as TabType, label: 'Role Profile Edit Recommendations', icon: PenLine },
         { id: 'plans' as TabType, label: 'Career Plans', icon: Target },
         { id: 'criteria' as TabType, label: 'Progression Criteria', icon: CheckCircle },
-        { id: 'competencies' as TabType, label: 'Competencies', icon: Award },
+        { id: 'competencies' as TabType, label: 'Values', icon: Award },
         { id: 'sm-admin' as TabType, label: 'Skills Matrix Builder', icon: Grid3x3 },
       ],
     },

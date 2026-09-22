@@ -106,7 +106,7 @@ export default function ComprehensiveReviewConductor() {
     achievement_percent: number;
   }>>([]);
   const [weeklyAverage, setWeeklyAverage] = useState<number>(0);
-  const [competencyRatings, setCompetencyRatings] = useState<Array<{
+  const [valueRatings, setValueRatings] = useState<Array<{
     competency_id: string;
     competency_name: string;
     target_level: number;
@@ -116,7 +116,7 @@ export default function ComprehensiveReviewConductor() {
     requires_approval: boolean;
   }>>([]);
   const [overallPerformanceScore, setOverallPerformanceScore] = useState<number>(0);
-  const [overallCompetencyScore, setOverallCompetencyScore] = useState<number>(0);
+  const [overallValueScore, setOverallValueScore] = useState<number>(0);
   const [employeeComments, setEmployeeComments] = useState('');
   const [monthlyManagerComments, setMonthlyManagerComments] = useState('');
   const [aiWeeklySummary, setAiWeeklySummary] = useState('');
@@ -240,7 +240,7 @@ export default function ComprehensiveReviewConductor() {
         setActivePlanActions([]);
       }
 
-      // Load competencies if monthly
+      // Load values if monthly
       if (reviewType === 'monthly') {
         await loadValuesCompetencies(selectedReview.employee.competency_level || 'Employee');
 
@@ -325,7 +325,7 @@ export default function ComprehensiveReviewConductor() {
     }
   }
 
-  async function loadValuesCompetencies(competencyLevel: string) {
+  async function loadValuesCompetencies(valueLevel: string) {
     try {
       const { data: valuesData } = await supabase
         .from('values')
@@ -338,7 +338,7 @@ export default function ComprehensiveReviewConductor() {
       const ratings: ValuesRating[] = [];
 
       for (const value of valuesData) {
-        const { data: competenciesData } = await supabase
+        const { data: valuesData } = await supabase
           .from('competencies')
           .select(`
             id, title, competency_statement,
@@ -350,18 +350,18 @@ export default function ComprehensiveReviewConductor() {
           .eq('is_active', true)
           .order('sort_order');
 
-        if (!competenciesData) continue;
+        if (!valuesData) continue;
 
-        for (const comp of competenciesData) {
+        for (const comp of valuesData) {
           let evidence_prompt: string | undefined;
           let what_good_looks_like: string | undefined;
           let what_great_looks_like: string | undefined;
 
-          if (competencyLevel === 'Manager') {
+          if (valueLevel === 'Manager') {
             evidence_prompt = comp.manager_evidence_prompt;
             what_good_looks_like = comp.manager_what_good_looks_like;
             what_great_looks_like = comp.manager_what_great_looks_like;
-          } else if (competencyLevel === 'Senior Leader') {
+          } else if (valueLevel === 'Senior Leader') {
             evidence_prompt = comp.senior_leader_evidence_prompt;
             what_good_looks_like = comp.senior_leader_what_good_looks_like;
             what_great_looks_like = comp.senior_leader_what_great_looks_like;
@@ -388,7 +388,7 @@ export default function ComprehensiveReviewConductor() {
 
       setValuesRatings(ratings);
     } catch (error) {
-      console.error('Error loading values competencies:', error);
+      console.error('Error loading values values:', error);
     }
   }
 
@@ -418,7 +418,7 @@ export default function ComprehensiveReviewConductor() {
         return;
       }
 
-      // Capture all competency context NOW before the async closure runs
+      // Capture all value context NOW before the async closure runs
       const competencyTitle = vrCurrent.competency_title;
       const competencyStatement = vrCurrent.competency_statement;
       const whatGoodLooksLike = vrCurrent.what_good_looks_like;
@@ -445,12 +445,12 @@ export default function ComprehensiveReviewConductor() {
             },
             body: JSON.stringify({
               rating,
-              ratingType: 'competency',
+              ratingType: 'value',
               ratingLabel: ratingLabels[rating] || String(rating),
               managerComments: commentTrimmed,
               employeeName,
-              competencyName: competencyTitle,
-              competencyStatement,
+              valueName: valueTitle,
+              valueStatement,
               whatGoodLooksLike,
               whatGreatLooksLike,
               seraSystemPrompt: capturedSeraSystemPrompt || undefined,
@@ -517,7 +517,7 @@ function updateKPIValue(index: number, field: string, value: any) {
     }
   }
 
-  function updateCompetencyRating(index: number, field: string, value: any) {
+  function updateValueRating(index: number, field: string, value: any) {
     const updated = [...competencyRatings];
     updated[index] = { ...updated[index], [field]: value };
 
@@ -526,20 +526,20 @@ function updateKPIValue(index: number, field: string, value: any) {
       updated[index].requires_approval = true;
     }
 
-    setCompetencyRatings(updated);
+    setValueRatings(updated);
 
-    // Recalculate overall competency score
+    // Recalculate overall value score
     const ratings = updated.filter(c => c.rating > 0);
     if (ratings.length > 0) {
       const avg = ratings.reduce((sum, c) => sum + c.rating, 0) / ratings.length;
-      setOverallCompetencyScore(avg);
+      setOverallValueScore(avg);
     }
   }
 
-  async function validateCompetencyWithAI(index: number) {
-    const competency = competencyRatings[index];
+  async function validateValueWithAI(index: number) {
+    const competency = valueRatings[index];
 
-    if (!competency.comments || competency.comments.length < 20) {
+    if (!value.comments || value.comments.length < 20) {
       alert('Please provide more detailed comments (at least 20 characters) before AI validation');
       return;
     }
@@ -549,7 +549,7 @@ function updateKPIValue(index: number, field: string, value: any) {
 
       // Call AI validation function
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/validate-competency-rating`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/validate-value-rating`,
         {
           method: 'POST',
           headers: {
@@ -557,11 +557,11 @@ function updateKPIValue(index: number, field: string, value: any) {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            competencyName: competency.competency_name,
-            rating: competency.rating,
-            comments: competency.comments,
-            evidence: competency.evidence,
-            targetLevel: competency.target_level
+            valueName: value.competency_name,
+            rating: value.rating,
+            comments: value.comments,
+            evidence: value.evidence,
+            targetLevel: value.target_level
           })
         }
       );
@@ -580,7 +580,7 @@ function updateKPIValue(index: number, field: string, value: any) {
         ...updated[index],
         ...result
       };
-      setCompetencyRatings(updated);
+      setValueRatings(updated);
 
     } catch (error) {
       console.error('Error validating with AI:', error);
@@ -615,7 +615,7 @@ function updateKPIValue(index: number, field: string, value: any) {
         if (error) throw error;
 
       } else {
-        // Build competency payload from valuesRatings (what the manager actually filled in)
+        // Build value payload from valuesRatings (what the manager actually filled in)
         const competencyPayload = valuesRatings.map(vr => ({
           competency_id: vr.competency_id,
           competency_name: vr.competency_title,
@@ -625,9 +625,9 @@ function updateKPIValue(index: number, field: string, value: any) {
           comments: vr.manager_comment,
         }));
 
-        const ratedCompetencies = valuesRatings.filter(vr => vr.manager_rating > 0);
-        const computedCompetencyScore = ratedCompetencies.length > 0
-          ? ratedCompetencies.reduce((sum, vr) => sum + vr.manager_rating, 0) / ratedCompetencies.length
+        const ratedValues = valuesRatings.filter(vr => vr.manager_rating > 0);
+        const computedValueScore = ratedValues.length > 0
+          ? ratedValues.reduce((sum, vr) => sum + vr.manager_rating, 0) / ratedValues.length
           : 0;
 
         // Save monthly review
@@ -638,8 +638,8 @@ function updateKPIValue(index: number, field: string, value: any) {
             kpi_summary: '',
             weekly_average_performance: weeklyAverage,
             overall_performance_score: overallPerformanceScore,
-            overall_competency_score: computedCompetencyScore,
-            competency_ratings: competencyPayload,
+            overall_competency_score: computedValueScore,
+            competency_ratings: valuePayload,
             employee_comments: employeeComments,
             manager_comments: monthlyManagerComments,
             ai_weekly_summary: aiWeeklySummary,
@@ -650,7 +650,7 @@ function updateKPIValue(index: number, field: string, value: any) {
 
         if (error) throw error;
 
-        // Save detailed competency ratings to review_competency_ratings (upsert to avoid duplicates on re-save)
+        // Save detailed value ratings to review_competency_ratings (upsert to avoid duplicates on re-save)
         if (valuesRatings.length > 0) {
           // Delete existing rows for this review first so re-saves don't duplicate
           await supabase
@@ -670,7 +670,7 @@ function updateKPIValue(index: number, field: string, value: any) {
 
           const { error: compError } = await supabase
             .from('review_competency_ratings')
-            .insert(competencyRows);
+            .insert(valueRows);
 
           if (compError) throw compError;
         }
@@ -946,7 +946,7 @@ function updateKPIValue(index: number, field: string, value: any) {
               </div>
 
               {valuesRatings.length === 0 ? (
-                <p className="text-sm text-gray-500 py-4 text-center">No competencies found. Add competencies in Admin settings.</p>
+                <p className="text-sm text-gray-500 py-4 text-center">No values found. Add values in Admin settings.</p>
               ) : (
                 <div className="space-y-6">
                   {Array.from(new Set(valuesRatings.map(r => r.value_id))).map(valueId => {

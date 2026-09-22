@@ -230,7 +230,7 @@ export default function OneToOneInterface({ meetingId, employeeId, onBack, openH
           <ReviewFlow
             meetingId={meetingId}
             employeeId={employeeId}
-            competencyLevel={employeeInfo?.competency_level || 'Employee'}
+            valueLevel={employeeInfo?.competency_level || 'Employee'}
             onBack={() => { setMode('select'); loadAll(); }}
             onSubmitted={() => { onBack(); }}
             previousWeeklySummaries={weeklyCheckins}
@@ -252,7 +252,7 @@ export default function OneToOneInterface({ meetingId, employeeId, onBack, openH
           <ReviewFlow
             meetingId={meetingId}
             employeeId={employeeId}
-            competencyLevel={employeeInfo?.competency_level || 'Employee'}
+            valueLevel={employeeInfo?.competency_level || 'Employee'}
             onBack={() => { setMode('select'); setSelectedHistoryReview(null); loadAll(); }}
             previousWeeklySummaries={[]}
             reviewMonth={selectedHistoryReview.review_month}
@@ -312,7 +312,7 @@ export default function OneToOneInterface({ meetingId, employeeId, onBack, openH
           <div>
             <p className="text-lg font-bold text-gray-900">Monthly Review</p>
             <p className="text-sm text-gray-500 mt-1 leading-relaxed">
-              5-step flow: KPI performance, competencies, skills, actions, and submit.
+              5-step flow: KPI performance, values, skills, actions, and submit.
             </p>
           </div>
           {monthlyReview ? (

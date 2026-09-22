@@ -69,8 +69,8 @@ const LEVELS = [
 export default function CompetencyFramework() {
   const { effectiveProfile } = useAuth();
   const [values, setValues] = useState<Value[]>([]);
-  const [selectedValue, setSelectedValue] = useState<string | null>(null);
-  const [selectedCompetency, setSelectedCompetency] = useState<Competency | null>(null);
+  const [selectedValueId, setSelectedValueId] = useState<string | null>(null);
+  const [selectedCompetencyId, setSelectedCompetencyId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [frameworkDescription, setFrameworkDescription] = useState('');
 
@@ -130,10 +130,10 @@ export default function CompetencyFramework() {
       setValues(valuesWithCompetencies);
 
       if (valuesWithCompetencies.length > 0) {
-        setSelectedValue(valuesWithCompetencies[0].id);
+        setSelectedValueId(valuesWithCompetencies[0].id);
       }
     } catch (error) {
-      console.error('Error fetching competency framework:', error);
+      console.error('Error fetching value framework:', error);
     } finally {
       setLoading(false);
     }
@@ -172,7 +172,7 @@ export default function CompetencyFramework() {
     return 'employee';
   }
 
-  const currentValue = values.find(v => v.id === selectedValue);
+  const currentValue = values.find(v => v.id === selectedValueId);
 
   if (loading) {
     return <div className="text-center py-8">Loading...</div>;
@@ -183,9 +183,9 @@ export default function CompetencyFramework() {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
           <Award className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No Competency Framework Yet</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">No Value Framework Yet</h3>
           <p className="text-gray-600">
-            The competency framework is currently being developed. Check back soon!
+            The value framework is currently being developed. Check back soon!
           </p>
         </div>
       </div>
@@ -195,9 +195,9 @@ export default function CompetencyFramework() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Competency Framework</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Value Framework</h1>
         <p className="text-gray-600 mt-2">
-          Our organizational values and the competencies that bring them to life
+          Our organizational values and the values that bring them to life
         </p>
         {frameworkDescription && (
           <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -218,9 +218,9 @@ export default function CompetencyFramework() {
           {values.map((value) => (
             <button
               key={value.id}
-              onClick={() => setSelectedValue(value.id)}
+              onClick={() => setSelectedValueId(value.id)}
               className={`px-6 py-4 font-medium whitespace-nowrap transition-all ${
-                selectedValue === value.id
+                selectedValueId === value.id
                   ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
               }`}
@@ -261,7 +261,7 @@ export default function CompetencyFramework() {
                 <div key={competency.id} className="bg-white rounded-lg border-2 border-gray-200 shadow-sm">
                   <div
                     className="p-6 cursor-pointer hover:bg-gray-50 transition-colors"
-                    onClick={() => setSelectedCompetency(selectedCompetency?.id === competency.id ? null : competency)}
+                    onClick={() => setSelectedCompetencyId(selectedCompetencyId === competency.id ? null : competency.id)}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-3">
@@ -275,7 +275,7 @@ export default function CompetencyFramework() {
                       </div>
                       <ChevronRight
                         className={`w-5 h-5 text-gray-400 transition-transform flex-shrink-0 mt-1 ${
-                          selectedCompetency?.id === competency.id ? 'rotate-90' : ''
+                          selectedCompetencyId === competency.id ? 'rotate-90' : ''
                         }`}
                       />
                     </div>
@@ -300,7 +300,7 @@ export default function CompetencyFramework() {
                     </div>
                   </div>
 
-                  {selectedCompetency?.id === competency.id && (
+                  {selectedCompetencyId === competency.id && (
                     <div className="border-t border-gray-200 p-6 space-y-4">
                       <div className="flex items-center gap-2 mb-2">
                         <span className={`text-sm font-semibold px-3 py-1 rounded-full ${userLevelConfig.badgeClass}`}>
@@ -384,7 +384,7 @@ export default function CompetencyFramework() {
 
           {currentValue.competencies.length === 0 && (
             <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-              <p className="text-gray-500">No competencies defined for this value yet.</p>
+              <p className="text-gray-500">No values defined for this value yet.</p>
             </div>
           )}
         </div>
