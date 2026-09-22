@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Award, Info, ChevronRight } from 'lucide-react';
+import { Award, Info, ChevronRight, Target, User, Users, Crown } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -28,6 +28,13 @@ interface Value {
   emoji: string | null;
   usage_description: string | null;
   competencies: Competency[];
+}
+
+interface BehavioralExample {
+  value_id: string;
+  role_level: 'employee' | 'manager' | 'senior_leader';
+  rating_level: 3 | 4;
+  behavioral_text: string;
 }
 
 const LEVELS = [
@@ -73,6 +80,8 @@ export default function CompetencyFramework() {
   const [selectedCompetencyId, setSelectedCompetencyId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [frameworkDescription, setFrameworkDescription] = useState('');
+  const [behavioralExamples, setBehavioralExamples] = useState<BehavioralExample[]>([]);
+  const [viewRoleLevel, setViewRoleLevel] = useState<'employee' | 'manager' | 'senior_leader'>('employee');
 
   const userCompetencyLevel = effectiveProfile?.competency_level || 'Employee';
 
@@ -80,6 +89,15 @@ export default function CompetencyFramework() {
     fetchCompetencyFramework();
     fetchFrameworkDescription();
   }, []);
+
+  useEffect(() => {
+    if (selectedValueId) fetchBehavioralExamples(selectedValueId);
+  }, [selectedValueId]);
+
+  useEffect(() => {
+    const key = getUserLevelKey();
+    setViewRoleLevel(key as any);
+  }, [userCompetencyLevel]);
 
   const fetchFrameworkDescription = async () => {
     try {
@@ -138,6 +156,23 @@ export default function CompetencyFramework() {
       setLoading(false);
     }
   };
+
+  async function fetchBehavioralExamples(valueId: string) {
+    try {
+      const { data } = await supabase
+        .from('value_behavioral_examples')
+        .select('value_id, role_level, rating_level, behavioral_text')
+        .eq('value_id', valueId);
+      if (data) setBehavioralExamples(data as BehavioralExample[]);
+    } catch (error) {
+      console.error('Error fetching behavioral examples:', error);
+    }
+  }
+
+  function getBehavioralText(role: string, rating: number): string | null {
+    const ex = behavioralExamples.find(e => e.role_level === role && e.rating_level === rating);
+    return ex?.behavioral_text || null;
+  }
 
   function getLevelFields(competency: Competency, levelKey: string) {
     if (levelKey === 'manager') {
@@ -234,6 +269,32 @@ export default function CompetencyFramework() {
         </div>
       </div>
 
+      {/* Role level toggle */}
+      <div className="mb-6 flex items-center gap-2 flex-wrap">
+        <span className="text-sm text-gray-500 mr-2">Viewing behavioral indicators for:</span>
+        {[
+          { key: 'employee' as const, label: 'Employee', icon: User, color: 'blue' },
+          { key: 'manager' as const, label: 'Manager', icon: Users, color: 'teal' },
+          { key: 'senior_leader' as const, label: 'Senior Leader', icon: Crown, color: 'slate' },
+        ].map(role => {
+          const Icon = role.icon;
+          const active = viewRoleLevel === role.key;
+          const colorClass = role.color === 'blue' ? 'bg-blue-600' : role.color === 'teal' ? 'bg-teal-600' : 'bg-slate-600';
+          return (
+            <button
+              key={role.key}
+              onClick={() => setViewRoleLevel(role.key)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                active ? `${colorClass} text-white` : 'bg-white text-gray-600 border border-gray-300 hover:border-gray-400'
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              {role.label}
+            </button>
+          );
+        })}
+      </div>
+
       {currentValue && (
         <div className="space-y-6">
           {(currentValue.statement || currentValue.usage_description) && (
@@ -247,6 +308,32 @@ export default function CompetencyFramework() {
                     <p className="text-sm text-blue-700">{currentValue.usage_description}</p>
                   )}
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Behavioral Indicators for this Value */}
+          {(getBehavioralText(viewRoleLevel, 3) || getBehavioralText(viewRoleLevel, 4)) && (
+            <div className="bg-white rounded-lg border-2 border-blue-200 p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Target className="w-5 h-5 text-blue-600" />
+                <h3 className="font-semibold text-gray-900">Behavioral Indicators — {viewRoleLevel === 'senior_leader' ? 'Senior Leader' : viewRoleLevel === 'employee' ? 'Employee' : 'Manager'}</h3>
+              </div>
+              <div className="grid md:grid-cols-2 gap-4">
+                {getBehavioralText(viewRoleLevel, 3) && (
+                  <div className="rounded-lg border p-4 bg-blue-50 border-blue-200">
+                    <h4 className="font-semibold text-sm mb-2 text-blue-900">Level 3 — What Good Looks Like</h4>
+                    <p className="text-sm text-blue-800 whitespace-pre-line leading-relaxed">{getBehavioralText(viewRoleLevel, 3)}</p>
+                    <span className="text-xs text-blue-500 mt-2 block">Proficient / Expected Standard</span>
+                  </div>
+                )}
+                {getBehavioralText(viewRoleLevel, 4) && (
+                  <div className="rounded-lg border p-4 bg-teal-50 border-teal-200">
+                    <h4 className="font-semibold text-sm mb-2 text-teal-900">Level 4 — What Excellent Looks Like</h4>
+                    <p className="text-sm text-teal-800 whitespace-pre-line leading-relaxed">{getBehavioralText(viewRoleLevel, 4)}</p>
+                    <span className="text-xs text-teal-500 mt-2 block">Exemplary / Role Model Standard</span>
+                  </div>
+                )}
               </div>
             </div>
           )}

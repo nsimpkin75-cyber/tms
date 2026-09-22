@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, CreditCard as Edit2, Trash2, Award, Power, PowerOff } from 'lucide-react';
+import { Plus, CreditCard as Edit2, Trash2, Award, Power, PowerOff, Target } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useLanguage } from '../../contexts/LanguageContext';
+
+interface BehavioralExample {
+  id?: string;
+  value_id: string;
+  role_level: 'employee' | 'manager' | 'senior_leader';
+  rating_level: 3 | 4;
+  behavioral_text: string;
+}
 
 interface Competency {
   id: string;
@@ -75,11 +83,69 @@ export default function CompetencyFrameworkManagement() {
 
   const [valueForm, setValueForm] = useState({ ...EMPTY_VALUE_FORM });
   const [competencyForm, setCompetencyForm] = useState({ ...EMPTY_COMPETENCY_FORM });
+  const [behavioralExamples, setBehavioralExamples] = useState<BehavioralExample[]>([]);
+  const [behavioralSaving, setBehavioralSaving] = useState(false);
 
   useEffect(() => {
     fetchValues();
     fetchFrameworkDescription();
   }, []);
+
+  useEffect(() => {
+    if (selectedValue) fetchBehavioralExamples(selectedValue.id);
+  }, [selectedValue?.id]);
+
+  async function fetchBehavioralExamples(valueId: string) {
+    try {
+      const { data } = await supabase
+        .from('value_behavioral_examples')
+        .select('*')
+        .eq('value_id', valueId);
+      if (data) setBehavioralExamples(data as BehavioralExample[]);
+    } catch (error) {
+      console.error('Error fetching behavioral examples:', error);
+    }
+  }
+
+  function getBehavioralText(role: string, rating: number): string {
+    const ex = behavioralExamples.find(e => e.role_level === role && e.rating_level === rating);
+    return ex?.behavioral_text || '';
+  }
+
+  function setBehavioralText(role: string, rating: number, text: string) {
+    setBehavioralExamples(prev => {
+      const existing = prev.find(e => e.role_level === role && e.rating_level === rating);
+      if (existing) {
+        return prev.map(e => e === existing ? { ...e, behavioral_text: text } : e);
+      }
+      return [...prev, { value_id: selectedValue!.id, role_level: role as any, rating_level: rating as 3 | 4, behavioral_text: text }];
+    });
+  }
+
+  async function saveBehavioralExamples() {
+    if (!selectedValue) return;
+    setBehavioralSaving(true);
+    try {
+      for (const ex of behavioralExamples) {
+        if (ex.id) {
+          await supabase.from('value_behavioral_examples').update({ behavioral_text: ex.behavioral_text }).eq('id', ex.id);
+        } else if (ex.behavioral_text.trim()) {
+          await supabase.from('value_behavioral_examples').insert({
+            value_id: selectedValue.id,
+            role_level: ex.role_level,
+            rating_level: ex.rating_level,
+            behavioral_text: ex.behavioral_text,
+          });
+        }
+      }
+      fetchBehavioralExamples(selectedValue.id);
+    } catch (error) {
+      console.error('Error saving behavioral examples:', error);
+      alert('Failed to save behavioral examples');
+    } finally {
+      setBehavioralSaving(false);
+    }
+  }
 
   const fetchFrameworkDescription = async () => {
     try {
@@ -516,6 +582,75 @@ export default function CompetencyFrameworkManagement() {
                       <p>{t.competency.noCompetencies}</p>
                     </div>
                   )}
+                </div>
+              </div>
+
+              {/* Behavioral Examples Editor */}
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h4 className="font-semibold text-gray-900 flex items-center gap-2">
+                      <Target className="w-5 h-5 text-blue-600" />
+                      Behavioral Indicators Matrix
+                    </h4>
+                    <p className="text-sm text-gray-500 mt-0.5">Define what Level 3 (Good) and Level 4 (Excellent) look like for each role persona</p>
+                  </div>
+                  <button
+                    onClick={saveBehavioralExamples}
+                    disabled={behavioralSaving}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {behavioralSaving ? 'Saving...' : 'Save Examples'}
+                  </button>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full border border-gray-200 rounded-lg">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase border-b border-gray-200">Role Persona</th>
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase border-b border-gray-200">
+                          <span className="text-blue-700">Level 3 — What Good Looks Like</span>
+                          <span className="block text-gray-400 font-normal normal-case">Proficient / Expected Standard</span>
+                        </th>
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase border-b border-gray-200">
+                          <span className="text-teal-700">Level 4 — What Excellent Looks Like</span>
+                          <span className="block text-gray-400 font-normal normal-case">Exemplary / Role Model Standard</span>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {[
+                        { key: 'employee', label: 'Employee', color: 'bg-blue-50 text-blue-700' },
+                        { key: 'manager', label: 'Manager', color: 'bg-teal-50 text-teal-700' },
+                        { key: 'senior_leader', label: 'Senior Leader', color: 'bg-slate-100 text-slate-700' },
+                      ].map(role => (
+                        <tr key={role.key}>
+                          <td className="px-4 py-3 align-top">
+                            <span className={`text-xs px-2 py-1 rounded-full font-medium ${role.color}`}>{role.label}</span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <textarea
+                              value={getBehavioralText(role.key, 3)}
+                              onChange={(e) => setBehavioralText(role.key, 3, e.target.value)}
+                              rows={3}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                              placeholder="e.g. Consistently demonstrates this value in daily interactions..."
+                            />
+                          </td>
+                          <td className="px-4 py-3">
+                            <textarea
+                              value={getBehavioralText(role.key, 4)}
+                              onChange={(e) => setBehavioralText(role.key, 4, e.target.value)}
+                              rows={3}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500"
+                              placeholder="e.g. Champions this value across the organisation and mentors others..."
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
 

@@ -68,6 +68,38 @@ interface Competency {
   target_level: number;
 }
 
+function BehavioralGuidanceCard({ whatGood, whatGreat }: { whatGood?: string; whatGreat?: string }) {
+  const [expanded, setExpanded] = useState(false);
+  if (!whatGood && !whatGreat) return null;
+  return (
+    <div className="border border-blue-100 rounded-lg bg-blue-50/50">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-50 w-full text-left rounded-lg"
+      >
+        <Target className="w-3.5 h-3.5" />
+        {expanded ? 'Hide behavioral guidance' : 'Show behavioral guidance (Level 3 & 4)'}
+      </button>
+      {expanded && (
+        <div className="px-3 pb-3 grid md:grid-cols-2 gap-2">
+          {whatGood && (
+            <div className="rounded border border-blue-200 bg-white p-2.5">
+              <p className="text-xs font-semibold text-blue-900 mb-1">Level 3 — What Good Looks Like</p>
+              <p className="text-xs text-blue-800 whitespace-pre-line leading-relaxed">{whatGood}</p>
+            </div>
+          )}
+          {whatGreat && (
+            <div className="rounded border border-teal-200 bg-white p-2.5">
+              <p className="text-xs font-semibold text-teal-900 mb-1">Level 4 — What Excellent Looks Like</p>
+              <p className="text-xs text-teal-800 whitespace-pre-line leading-relaxed">{whatGreat}</p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ComprehensiveReviewConductor() {
   const { profile } = useAuth();
   const [reviewType, setReviewType] = useState<'weekly' | 'monthly'>('monthly');
@@ -966,6 +998,9 @@ function updateKPIValue(index: number, field: string, value: any) {
                                 <p className="text-xs text-gray-600 leading-relaxed">
                                   {vr.evidence_prompt || 'Describe observed behaviours and examples.'}
                                 </p>
+                                {(vr.what_good_looks_like || vr.what_great_looks_like) && (
+                                  <BehavioralGuidanceCard whatGood={vr.what_good_looks_like} whatGreat={vr.what_great_looks_like} />
+                                )}
                                 <div>
                                   <label className="block text-xs font-medium text-gray-500 mb-1">Rating</label>
                                   <select
